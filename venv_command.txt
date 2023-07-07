@@ -1,0 +1,4 @@
+Set-ExecutionPolicy Unrestricted -Scope Process
+venv/Scripts/Activate.ps1
+
+python -m venv c:\path\to\myenv
