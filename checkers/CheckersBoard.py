@@ -18,8 +18,8 @@ class CheckersBoard:
         w = self.W ^ self.K
 
         movers = (not_occ << 4) & w
-        movers |= ((not_occ&W_L3) << 3) & w
-        movers |= ((not_occ&W_L5) << 5) & w
+        movers |= ((not_occ&W_L3R) << 5) & w
+        movers |= ((not_occ&W_L5L) << 3) & w
 
         moves = (w >> 4) & not_occ
         moves |= ((w & W_R3L)>>5) & not_occ
@@ -29,9 +29,15 @@ class CheckersBoard:
         k_moves = 0
 
         if w_k:
+            #forward
+            k_movers |= (not_occ << 4) & w_k
+            k_movers |= ((not_occ&W_L3R) << 5) & w_k
+            k_movers |= ((not_occ&W_L5L) << 3) & w_k
+            
+            #backward
             k_movers |= (not_occ >> 4) & w_k
-            k_movers |= ((not_occ&W_R3) >> 3) & w_k
-            k_movers |= ((not_occ&W_R5) >> 5) & w_k
+            k_movers |= ((not_occ&W_R3L) >> 5) & w_k
+            k_movers |= ((not_occ&W_R5R) >> 3) & w_k
 
             #forward
             k_moves = (w_k >> 4) & not_occ
@@ -80,23 +86,46 @@ class CheckersBoard:
         not_occ = ~(self.W | self.B)
         w_k = self.W & self.K
         movers = 0
+        moves = 0
+        w = self.W ^ self.K
 
-        tmp = (not_occ << 4) & self.W
-        if tmp:
-            movers |= (((tmp&W_L3) << 3) | ((tmp&W_L5) << 5)) & self.W
+        tmp = (not_occ<<4) & self.B
+        movers |= (W_L3R&w)&(tmp<<3)
+        movers |= (W_R3L&w)&(tmp<<5)
 
-        tmp = ( ((not_occ&W_L3) << 3) | ((not_occ&W_L5) << 5) ) & self.B
-        
-        movers |= (tmp << 4) & self.W
+        tmp = ((W_L5L&not_occ)<<3)&self.B
+        movers|= (W_R3&w)&(tmp<<4)
 
+        tmp = ((W_L3R&not_occ)<<5)&self.B
+        movers|= (W_L3&w)&(tmp<<4)
+
+        k_movers = 0
+        k_moves = 0
         if w_k:
-            tmp = (not_occ>> 4) & self.B
-            if (tmp): 
-                movers |= (((tmp&W_R3) >> 3) | ((tmp&W_R5) >> 5)) & w_k
-            tmp = ( ((not_occ&W_R3) >> 3) | ((not_occ&W_R5) >> 5) ) & self.B
-            if tmp: 
-                movers |= (tmp >> 4) & w_k
-        return movers
+            #forward
+            tmp = (not_occ<<4) & self.B
+            k_movers |= (W_L3R&w_k)&(tmp<<3)
+            k_movers |= (W_R3L&w_k)&(tmp<<5)
+
+            tmp = ((W_L5L&not_occ)<<3)&self.B
+            k_movers|= (W_R3&w_k)&(tmp<<4)
+
+            tmp = ((W_L3R&not_occ)<<5)&self.B
+            k_movers|= (W_L3&w_k)&(tmp<<4)
+
+            #backward
+            tmp = (not_occ>>4) & self.B
+            k_movers |= (W_R3L&w_k)&(tmp>>3)
+            k_movers != (W_L3R&w_k)&(tmp>>5)
+
+            tmp = ((W_R5R&not_occ)>>3)&self.B
+            k_movers |= (W_L3&w_k)&(tmp>>4)
+
+            tmp = ((W_R3L&not_occ)>>5)&self.B
+            k_movers |= (W_R3&w_k)&(tmp>>4)
+
+            
+        return movers, moves, k_movers, k_moves
     
     def get_metrics(self, board: np.ndarray)->np.ndarray:
         pass
