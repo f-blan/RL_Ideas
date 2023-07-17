@@ -56,8 +56,8 @@ class CheckersBoard:
         b = self.B ^ self.K
 
         movers = (not_occ >> 4) & b
-        movers |= ((not_occ&W_R3) >> 3) & b
-        movers |= ((not_occ&W_R5) >> 5) & b
+        movers |= ((not_occ&W_R3L) >> 5) & b
+        movers |= ((not_occ&W_R5R) >> 3) & b
 
         moves = (b << 4) & not_occ
         moves |= ((b & W_L3R)<<5) & not_occ
@@ -67,9 +67,15 @@ class CheckersBoard:
         k_moves = 0
 
         if b_k:
+            #forward
             k_movers |= (not_occ >> 4) & b_k
-            k_movers |= ((not_occ&W_R3) >> 3) & b_k
-            k_movers |= ((not_occ&W_R5) >> 5) & b_k
+            k_movers |= ((not_occ&W_R3L) >> 5) & b_k
+            k_movers |= ((not_occ&W_R5R) >> 3) & b_k
+
+            #backward
+            k_movers |= (not_occ << 4) & b_k
+            k_movers |= ((not_occ&W_L3R) << 5) & b_k
+            k_movers |= ((not_occ&W_L5L) << 3) & b_k
 
             #backward
             k_moves = (b_k >> 4) & not_occ
@@ -99,6 +105,16 @@ class CheckersBoard:
         tmp = ((W_L3R&not_occ)<<5)&self.B
         movers|= (W_L3&w)&(tmp<<4)
 
+        tmp = (self.B >> 4)&not_occ
+        moves |= ((W_R3L&w)>>9)&tmp
+        moves |= ((W_L3R&w)>>7)&tmp
+
+        tmp = ((W_L3R&self.B)>>3) & not_occ
+        moves |= ((w&W_R3)>>7) &tmp
+
+        tmp = ((W_R3L&self.B)>>5) &not_occ
+        moves |= ((w&W_L3)>>9) & tmp
+
         k_movers = 0
         k_moves = 0
         if w_k:
@@ -123,6 +139,28 @@ class CheckersBoard:
 
             tmp = ((W_R3L&not_occ)>>5)&self.B
             k_movers |= (W_R3&w_k)&(tmp>>4)
+
+            #moves forward
+            tmp = (self.B >> 4)&not_occ
+            k_moves |= ((W_R3L&w_k)>>9)&tmp
+            k_moves |= ((W_L3R&w_k)>>7)&tmp
+
+            tmp = ((W_L3R&self.B)>>3) & not_occ
+            k_moves |= ((w&W_R3)>>7) &tmp
+
+            tmp = ((W_R3L&self.B)>>5) &not_occ
+            k_moves |= ((w&W_L3)>>9) & tmp
+
+            #moves bakward
+            tmp = (self.B << 4)&not_occ
+            k_moves |= ((W_L3R&w_k)<<9)&tmp
+            k_moves |= ((W_R3L&w_k)<<7)&tmp
+
+            tmp = ((W_R3L&self.B)<<3) & not_occ
+            k_moves |= ((w&W_L3)<<7) &tmp
+
+            tmp = ((W_L3R&self.B)<<5) &not_occ
+            k_moves |= ((w&W_R3)<<9) & tmp
 
             
         return movers, moves, k_movers, k_moves
