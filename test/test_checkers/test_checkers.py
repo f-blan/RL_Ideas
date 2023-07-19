@@ -5,6 +5,7 @@ from checkers.consts import *
 
 import unittest
 from test.test_checkers.white_moves import *
+from test.test_checkers.king_moves import *
 
 class TfDeepQ_Tester:
     def __init__(self):
@@ -22,10 +23,12 @@ class BB_Tester:
     def run(self):
         #self.test_masks()
         #self.test_print_bb()
-        #self.test_white_moves()
-        #self.test_black_moves()
         t = WhiteMovesTester()
         t.run()
+
+        t = KingMovesTester()
+        t.run()
+        
     def test_masks(self):
         print_bb(W_L3, "l3")
         print_bb(W_L5, "l5")

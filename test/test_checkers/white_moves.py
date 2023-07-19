@@ -225,10 +225,108 @@ class WhiteMovesTester:
         assert moves == 0x00007000
 
         
+    def jump_moves_blocked(self):
 
-        
-        
+        board = CheckersBoard()
 
+        board.W = 0x10000000
+        board.B = 0x01200000
+        movers, moves, _, __ = board._white_jumps()
+
+        assert movers == 0
+        assert moves == 0
+        
+        board.W = 0x80000000
+        board.B = 0x04400000
+        movers, moves, _, __ = board._white_jumps()
+
+        assert movers == 0
+        assert moves == 0
+
+        board.W = 0x01000000
+        board.B = 0x00220000
+        movers, moves, _, __ = board._white_jumps()
+
+        assert movers == 0
+        assert moves == 0
+
+        board.W = 0x08000000
+        board.B = 0x00840000
+        movers, moves, _, __ = board._white_jumps()
+
+        assert movers == 0
+        assert moves == 0
+
+        board.W = 0x06000000
+        board.B = 0x00460000
+        movers, moves, _, __ = board._white_jumps()
+
+        assert movers == 0
+        assert moves == 0
+
+        board.W = 0x00600000
+        board.B = 0x00026000
+        movers, moves, _, __ = board._white_jumps()
+
+        assert movers == 0
+        assert moves == 0
+
+        board.W = 0x0C000000
+        board.B = 0x00CE0000
+        movers, moves, _, __ = board._white_jumps()
+        
+        assert movers == 0
+        assert moves == 0
+
+        board.W = 0x0E000000
+        board.B = 0x00CE0000
+        movers, moves, _, __ = board._white_jumps()
+        
+        assert movers == 0
+        assert moves == 0
+
+        board.W = 0x03000000
+        board.B = 0x00330000
+        movers, moves, _, __ = board._white_jumps()
+        
+        assert movers == 0
+        assert moves == 0
+
+        board.W = 0x03000000
+        board.B = 0x00770000
+        movers, moves, _, __ = board._white_jumps()
+        
+        assert movers == 0
+        assert moves == 0
+
+        #................
+        board.W = 0x00C00000
+        board.B = 0x000CC000
+        movers, moves, _, __ = board._white_jumps()
+        
+        assert movers == 0
+        assert moves == 0
+
+        board.W = 0x00E00000
+        board.B = 0x000EE000
+        movers, moves, _, __ = board._white_jumps()
+        
+        assert movers == 0
+        assert moves == 0
+
+        board.W = 0x00300000
+        board.B = 0x00037000
+        movers, moves, _, __ = board._white_jumps()
+        
+        assert movers == 0
+        assert moves == 0
+
+        board.W = 0x00300000
+        board.B = 0x00077000
+        movers, moves, _, __ = board._white_jumps()
+        
+        assert movers == 0
+        assert moves == 0
 
     """
         print_bb(board.W)
