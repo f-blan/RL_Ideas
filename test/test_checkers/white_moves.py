@@ -2,6 +2,9 @@ from checkers.CheckersBoard import CheckersBoard
 from checkers.bb_utils import *
 
 class WhiteMovesTester:
+    def __init__(self, data_folder: str):
+        self.data_folder = data_folder
+        
     def run(self):
         print("---- White Moves Tester ----")
         for name in dir(self):
@@ -11,14 +14,14 @@ class WhiteMovesTester:
         print("---- END ----")
 
     def normal_moves(self):
-        board = CheckersBoard()
+        board = CheckersBoard(self.data_folder)
         movers, moves, _, __ = board._white_moves()
         
         assert movers == 0x00F00000
         assert moves == 0x000F0000
         
     def king_moves(self):
-        board = CheckersBoard()
+        board = CheckersBoard(self.data_folder)
         #kings
         board.K = 0x0000F000
         board.W = 0x0000F000
@@ -30,7 +33,7 @@ class WhiteMovesTester:
         assert k_moves == 0x000F0F00
     
     def normal_moves_edges(self):
-        board = CheckersBoard()
+        board = CheckersBoard(self.data_folder)
         board.B = 0
 
         board.W = 0x10000000
@@ -76,7 +79,7 @@ class WhiteMovesTester:
         assert moves == 0x000000C0
         
     def normal_moves_edges_blocked(self):
-        board = CheckersBoard()
+        board = CheckersBoard(self.data_folder)
         board.B = 0
 
         board.W = 0x11000000
@@ -123,7 +126,7 @@ class WhiteMovesTester:
         
 
     def jump_moves(self):
-        board = CheckersBoard()
+        board = CheckersBoard(self.data_folder)
 
         board.W = 0x10000000
         board.B = 0x01000000
@@ -227,7 +230,7 @@ class WhiteMovesTester:
         
     def jump_moves_blocked(self):
 
-        board = CheckersBoard()
+        board = CheckersBoard(self.data_folder)
 
         board.W = 0x10000000
         board.B = 0x01200000

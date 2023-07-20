@@ -2,6 +2,9 @@ from checkers.CheckersBoard import CheckersBoard
 from checkers.bb_utils import *
 
 class KingMovesTester:
+    def __init__(self, data_folder: str):
+        self.data_folder = data_folder
+        
     def run(self):
         print("---- King Moves Tester ----")
         for name in dir(self):
@@ -11,7 +14,7 @@ class KingMovesTester:
         print("---- END ----")
     
     def _white_normal(self):
-        b = CheckersBoard()
+        b = CheckersBoard(self.data_folder)
 
         b.W = 0x10000000
         b.B = 0x00000000
@@ -131,7 +134,7 @@ class KingMovesTester:
         assert moves == 0x00000080
 
     def _white_normal_blocked(self):
-        b = CheckersBoard()
+        b = CheckersBoard(self.data_folder)
 
         b.W = 0x10000000
         b.B = 0x01000000
@@ -241,7 +244,7 @@ class KingMovesTester:
         assert moves == 0
 
     def _black_normal(self):
-        b = CheckersBoard()
+        b = CheckersBoard(self.data_folder)
 
         b.B = 0x10000000
         b.W = 0x00000000
@@ -361,7 +364,7 @@ class KingMovesTester:
         assert moves == 0x00000080
 
     def _black_normal_blocked(self):
-        b = CheckersBoard()
+        b = CheckersBoard(self.data_folder)
 
         b.B = 0x10000000
         b.W = 0x01000000

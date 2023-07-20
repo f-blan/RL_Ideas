@@ -1,6 +1,9 @@
-from test.test_checkers import test_checkers
+from test.TestRunner import TestRunner
+from test_parser import parse_test_arguments
+import sys
 
+if __name__ == "__main__":
+    args = parse_test_arguments(sys.argv[1:])
 
-tester = test_checkers.TfDeepQ_Tester()
-
-tester.run()
+    r = TestRunner()
+    r.run(args)

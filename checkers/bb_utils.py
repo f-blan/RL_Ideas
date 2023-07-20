@@ -1,5 +1,8 @@
 from typing import Tuple
 import numpy as np
+import json, codecs
+from checkers.BBManager import BBManager
+import os
 
 def generate_masks_whites() -> Tuple[int, int, int, int, int]:
     s = [0]*32
@@ -44,5 +47,57 @@ def print_bb(bb:int, title: str = ""):
         tmp = tmp<<4
     print("")
 
-def bb_to_np(w:int, b:int, k:int) -> np.ndarray:
-    pass
+def generate_bbs(folder: str) -> None:
+    generate_normal_moves(folder)
+
+def generate_normal_moves(folder: str) -> None:
+    bb_m = BBManager()
+    
+    b = 0
+    w = 0
+    k = 0
+
+    white_moves_dict = {}
+    piece = 1
+
+    while piece & 0xFFFFFFFF != 0:
+        w = piece
+        _, moves, __,___ = bb_m.white_moves(w,b,k)
+        moves_list = []
+        i = 1
+        while i & 0xFFFFFFFF != 0:
+            if moves & i != 0:
+                moves_list.append(moves&i)
+            i = i << 1
+        
+        white_moves_dict[piece] = moves_list
+        piece = piece << 1
+
+    filename = os.path.join(folder, "white_moves.json")
+    json.dump(obj=white_moves_dict, fp=codecs.open(filename, "w"))
+
+    w = 0
+    b=0
+    k=0
+
+    black_moves_dict = {}
+    piece = 1
+
+    while piece & 0xFFFFFFFF != 0:
+        b = piece
+        _, moves, __,___ = bb_m.black_moves(w,b,k)
+        moves_list = []
+        i = 1
+        while i & 0xFFFFFFFF != 0:
+            if moves & i != 0:
+                moves_list.append(moves&i)
+            i = i << 1
+        
+        black_moves_dict[piece] = moves_list
+        piece = piece << 1
+
+    filename = os.path.join(folder, "black_moves.json")
+    json.dump(obj=black_moves_dict, fp=codecs.open(filename, "w"))
+    
+    
+

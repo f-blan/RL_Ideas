@@ -3,13 +3,14 @@ from checkers.bb_utils import *
 from checkers.consts import *
 
 
-import unittest
 from test.test_checkers.white_moves import *
 from test.test_checkers.king_moves import *
+from test.test_checkers.king_jumps import *
+from argparse import Namespace
 
-class TfDeepQ_Tester:
-    def __init__(self):
-        self.bb = BB_Tester(True)
+class TestCheckers:
+    def __init__(self, args: Namespace):
+        self.bb = BB_Tester(args)
 
     def run(self):
         #self.initialization()
@@ -17,48 +18,20 @@ class TfDeepQ_Tester:
 
         
 class BB_Tester:
-    def __init__(self, print_bbs = True):
-        self.print_bbs = print_bbs
+    def __init__(self, args: Namespace):
+        self.args = args
 
     def run(self):
         #self.test_masks()
         #self.test_print_bb()
-        t = WhiteMovesTester()
+        t = WhiteMovesTester(self.args.c_data_folder)
         t.run()
 
-        t = KingMovesTester()
+        t = KingMovesTester(self.args.c_data_folder)
         t.run()
-        
-    def test_masks(self):
-        print_bb(W_L3, "l3")
-        print_bb(W_L5, "l5")
-        print_bb(W_R3, "r3")
-        print_bb(W_R5, "r5")
 
-    def test_print_bb(self):
-        if self.print_bbs:
-            print_bb(1)
-            print_bb(0xffffffff)
-            print_bb(0x01010101)
-
-    def test_black_moves(self):
-        board = CheckersBoard()
-        movers, moves, _, __ = board._black_moves()
-        
-        if self.print_bbs and False:
-            print_bb(movers, "movers")
-            print_bb(moves, "moves")
-        
-        #kings
-        board.K = 0x00008000
-        board.W = 0x02008000
-        board.B = 0
-
-        movers, moves, k_movers, k_moves = board._white_moves()
-
-        if self.print_bbs and True:
-            print_bb(k_movers, "k_movers")
-            print_bb(k_moves, "k_moves")
+        t = KingJumpsTester(self.args.c_data_folder)
+        t.run()
     
     def initialization(self):
         board = CheckersBoard()
