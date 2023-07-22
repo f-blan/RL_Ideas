@@ -49,6 +49,58 @@ def print_bb(bb:int, title: str = ""):
 
 def generate_bbs(folder: str) -> None:
     generate_normal_moves(folder)
+    generate_jump_moves(folder)
+
+def generate_jump_moves(folder: str) -> None:
+    bb_m = BBManager()
+
+    b = 0x0F000000
+    w = 0
+    k = 0
+
+    white_jumps_dict = {}
+    piece = 0x80000000
+    
+    while piece & 0xFFFFFFFF != 0:
+        w = piece
+        b = 1
+        moves_list = []
+        apply_mask = []
+        while b & 0xFFFFFFFF != 0:
+            _, moves, __,___ = bb_m.white_jumps(w,b,k)
+            if moves != 0 and w != b:
+                moves_list.append(moves)
+                apply_mask.append(~b)
+            b = b<<1
+        white_jumps_dict[piece] = (moves_list, apply_mask)
+        piece = piece >> 1
+    
+    filename = os.path.join(folder, "white_jumps.json")
+    json.dump(obj=white_jumps_dict, fp=codecs.open(filename, "w"))
+
+    w = 0x000000F0
+    b = 0
+    k = 0
+
+    black_jumps_dict = {}
+    piece = 0x00000001
+    
+    while piece & 0xFFFFFFFF != 0:
+        b = piece
+        w = 1
+        moves_list = []
+        apply_mask = []
+        while w & 0xFFFFFFFF != 0:
+            _, moves, __,___ = bb_m.black_jumps(w,b,k)
+            if moves != 0 and w != b:
+                moves_list.append(moves)
+                apply_mask.append(~w)
+            w=w<<1
+        black_jumps_dict[piece] = (moves_list, apply_mask)
+        piece = piece << 1
+    
+    filename = os.path.join(folder, "black_jumps.json")
+    json.dump(obj=black_jumps_dict, fp=codecs.open(filename, "w"))
 
 def generate_normal_moves(folder: str) -> None:
     bb_m = BBManager()
@@ -66,7 +118,7 @@ def generate_normal_moves(folder: str) -> None:
         moves_list = []
         i = 1
         while i & 0xFFFFFFFF != 0:
-            if moves & i != 0:
+            if moves & i != 0 and w != b:
                 moves_list.append(moves&i)
             i = i << 1
         
@@ -89,7 +141,7 @@ def generate_normal_moves(folder: str) -> None:
         moves_list = []
         i = 1
         while i & 0xFFFFFFFF != 0:
-            if moves & i != 0:
+            if moves & i != 0 and w!=b:
                 moves_list.append(moves&i)
             i = i << 1
         

@@ -5,6 +5,95 @@ import os
 import json, codecs
 
 class BBManager:
+    def black_jumpers_only(self, W: int, B: int, K: int) -> Tuple[int, int]:
+        not_occ = ~(W | B)&0xFFFFFFFF
+        b_k = B & K
+        movers = 0
+        b = B ^ K
+
+        tmp = (not_occ>>4) & W
+        movers |= (W_R3L&b)&(tmp>>3)
+        movers |= (W_L3R&b)&(tmp>>5)
+
+        tmp = ((W_R5R&not_occ)>>3)&W
+        movers|= (W_L3&b)&(tmp>>4)
+
+        tmp = ((W_R3L&not_occ)>>5)&W
+        movers|= (W_R3&b)&(tmp>>4)
+
+        k_movers = 0
+
+        if b_k:
+            #backward
+            tmp = (not_occ<<4) & W
+            k_movers |= (W_L3R&b_k)&(tmp<<3)
+            k_movers |= (W_R3L&b_k)&(tmp<<5)
+
+            tmp = ((W_L5L&not_occ)<<3)&W
+            k_movers|= (W_R3&b_k)&(tmp<<4)
+
+            tmp = ((W_L3R&not_occ)<<5)&W
+            k_movers|= (W_L3&b_k)&(tmp<<4)
+
+            #forward
+            tmp = (not_occ>>4) & W
+            k_movers |= (W_R3L&b_k)&(tmp>>3)
+            k_movers |= (W_L3R&b_k)&(tmp>>5)
+
+            tmp = ((W_R5R&not_occ)>>3)&W
+            k_movers |= (W_L3&b_k)&(tmp>>4)
+
+            tmp = ((W_R3L&not_occ)>>5)&W
+            k_movers |= (W_R3&b_k)&(tmp>>4)
+        return movers, k_movers
+
+    def black_jumps_only(self, W: int, B: int, K: int) -> Tuple[int, int]:
+        not_occ = ~(W | B)&0xFFFFFFFF
+        b_k = B & K
+        moves = 0
+        b = B ^ K
+
+        tmp = (W << 4)&not_occ
+        moves |= ((W_L3R&b)<<9)&tmp
+        moves |= ((W_R3L&b)<<7)&tmp
+
+        tmp = ((W_R3L&W)<<3) & not_occ
+        moves |= ((b&W_L3)<<7) &tmp
+
+        tmp = ((W_L3R&W)<<5) &not_occ
+        moves |= ((b&W_R3)<<9) & tmp
+
+        moves &= 0xFFFFFFFF 
+
+        k_moves = 0
+        if b_k:
+            #moves backward
+            tmp = (W >> 4)&not_occ
+            k_moves |= ((W_R3L&b_k)>>9)&tmp
+            k_moves |= ((W_L3R&b_k)>>7)&tmp
+
+            tmp = ((W_L3R&W)>>3) & not_occ
+            k_moves |= ((b_k&W_R3)>>7) &tmp
+
+            tmp = ((W_R3L&W)>>5) &not_occ
+            k_moves |= ((b_k&W_L3)>>9) & tmp
+
+            #moves forward
+            tmp = (W << 4)&not_occ
+            k_moves |= ((W_L3R&b_k)<<9)&tmp
+            k_moves |= ((W_R3L&b_k)<<7)&tmp
+
+            tmp = ((W_R3L&W)<<3) & not_occ
+            k_moves |= ((b_k&W_L3)<<7) &tmp
+
+            tmp = ((W_L3R&W)<<5) &not_occ
+            k_moves |= ((b_k&W_R3)<<9) & tmp
+
+            k_moves &= 0xFFFFFFFF
+
+        return moves, k_moves
+
+
     def black_jumps(self, W: int, B: int, K: int) -> Tuple[int, int, int, int]:
         not_occ = ~(W | B)&0xFFFFFFFF
         b_k = B & K
@@ -85,6 +174,96 @@ class BBManager:
 
             
         return movers, moves, k_movers, k_moves
+
+    def white_jumpers_only(self, W: int, B: int, K: int) -> Tuple[int, int]:
+        not_occ = ~(W | B)&0xFFFFFFFF
+        w_k = W & K
+        movers = 0
+        w = W ^ K
+
+        tmp = (not_occ<<4) & B
+        movers |= (W_L3R&w)&(tmp<<3)
+        movers |= (W_R3L&w)&(tmp<<5)
+
+        tmp = ((W_L5L&not_occ)<<3)&B
+        movers|= (W_R3&w)&(tmp<<4)
+
+        tmp = ((W_L3R&not_occ)<<5)&B
+        movers|= (W_L3&w)&(tmp<<4)
+
+        k_movers = 0
+        if w_k:
+            #forward
+            tmp = (not_occ<<4) & B
+            k_movers |= (W_L3R&w_k)&(tmp<<3)
+            k_movers |= (W_R3L&w_k)&(tmp<<5)
+
+            tmp = ((W_L5L&not_occ)<<3)&B
+            k_movers|= (W_R3&w_k)&(tmp<<4)
+
+            tmp = ((W_L3R&not_occ)<<5)&B
+            k_movers|= (W_L3&w_k)&(tmp<<4)
+
+            #backward
+            tmp = (not_occ>>4) & B
+            k_movers |= (W_R3L&w_k)&(tmp>>3)
+            k_movers |= (W_L3R&w_k)&(tmp>>5)
+
+            tmp = ((W_R5R&not_occ)>>3)&B
+            k_movers |= (W_L3&w_k)&(tmp>>4)
+
+            tmp = ((W_R3L&not_occ)>>5)&B
+            k_movers |= (W_R3&w_k)&(tmp>>4)
+
+        return movers, k_movers
+
+    def white_jumps_only(self, W: int, B: int, K: int) -> Tuple[int, int]:
+        not_occ = ~(W | B)&0xFFFFFFFF
+        w_k = W & K
+        moves = 0
+        w = W ^ K
+
+        tmp = (B >> 4)&not_occ
+        moves |= ((W_R3L&w)>>9)&tmp
+        moves |= ((W_L3R&w)>>7)&tmp
+
+        tmp = ((W_L3R&B)>>3) & not_occ
+        moves |= ((w&W_R3)>>7) &tmp
+
+        tmp = ((W_R3L&B)>>5) &not_occ
+        moves |= ((w&W_L3)>>9) & tmp
+
+        moves&= 0xFFFFFFFF
+
+        k_moves = 0
+
+        if w_k:
+            #moves forward
+            tmp = (B >> 4)&not_occ
+            k_moves |= ((W_R3L&w_k)>>9)&tmp
+            k_moves |= ((W_L3R&w_k)>>7)&tmp
+
+            tmp = ((W_L3R&B)>>3) & not_occ
+            k_moves |= ((w_k&W_R3)>>7) &tmp
+
+            tmp = ((W_R3L&B)>>5) &not_occ
+            k_moves |= ((w_k&W_L3)>>9) & tmp
+
+            #moves bakward
+            tmp = (B << 4)&not_occ
+            k_moves |= ((W_L3R&w_k)<<9)&tmp
+            k_moves |= ((W_R3L&w_k)<<7)&tmp
+
+            tmp = ((W_R3L&B)<<3) & not_occ
+            k_moves |= ((w_k&W_L3)<<7) &tmp
+
+            tmp = ((W_L3R&B)<<5) &not_occ
+            k_moves |= ((w_k&W_R3)<<9) & tmp
+
+            k_moves&= 0xFFFFFFFF
+        
+        return moves, k_moves
+
 
     def white_jumps(self, W: int, B: int, K: int) -> Tuple[int,int,int,int]:
         not_occ = ~(W | B)&0xFFFFFFFF
@@ -262,14 +441,27 @@ class BBManager:
         d = json.loads(d)
 
         for k in d:
-            ret_wm[k] = np.array(d[k])
+            ret_wm[int(k)] = np.array(d[k])
         
         filename = os.path.join(data_folder, "black_moves.json")
         d = codecs.open(filename, 'r').read()
         d = json.loads(d)
 
         for k in d:
-            ret_bm[k] = np.array(d[k])
+            ret_bm[int(k)] = np.array(d[k])
+
+        filename = os.path.join(data_folder, "white_jumps.json")
+        d = codecs.open(filename, 'r').read()
+        d = json.loads(d)
+        for k in d:
+            ret_wj[int(k)] = (np.array(d[k][0]), np.array(d[k][1]))
+
+        filename = os.path.join(data_folder, "black_jumps.json")
+        d = codecs.open(filename, 'r').read()
+        d = json.loads(d)
+
+        for k in d:
+            ret_bj[int(k)] = (np.array(d[k][0]), np.array(d[k][1]))
 
         return ret_wm, ret_bm, ret_wj, ret_bj
 
