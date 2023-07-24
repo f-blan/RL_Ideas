@@ -465,5 +465,44 @@ class BBManager:
 
         return ret_wm, ret_bm, ret_wj, ret_bj
 
-    def bb_to_np(w:int, b:int, k:int) -> np.ndarray:
-        pass
+    def bb_scores(self, W: int, B: int, K: int)-> Tuple[int, int, int, int, int, int, int]:
+        w_movers, w_moves, wk_movers, wk_moves = self.white_moves(W, B, K)
+        b_movers, b_moves, bk_movers, bk_moves = self.black_moves(W, B, K)
+
+        w_jumpers, wk_jumpers = self.white_jumpers_only(W,B,K)
+        b_jumpers, bk_jumpers = self.black_jumpers_only(W,B,K)
+
+        capped_score = (24-B.bit_count())-(24-W.bit_count())
+        potential_score = (w_moves | wk_moves).bit_count() - (b_moves | bk_moves).bit_count()
+        men_score = (W^K).bit_count()-(B^K).bit_count()
+        kings_score = (W&K).bit_count()-(B&K).bit_count()
+        mid_score = (W&0x000FF000).bit_count()-(B&0x000FF000)
+        capturables_score = (w_jumpers | wk_jumpers).bit_count()-(b_jumpers | bk_jumpers).bit_count()
+
+        won = 0
+        if W == 0:
+            won = -1
+        elif B == 0:
+            won = 1
+
+        return capped_score, potential_score, men_score, kings_score, mid_score, capturables_score, won
+
+    def bb_to_np(aself, W:int, B:int, K:int) -> np.ndarray:
+        ret = np.zeros((8, 4), dtype=int)
+        wk = W & K
+        bk = B & K 
+
+        pos = 0x80000000
+        i=0
+        j=0
+        while pos != 0:
+            if j == 4:
+                j=0
+                i+=1
+            if W & pos == 1:
+                ret[i,j] = 2 if wk & pos else 1
+            elif B & pos == 1:
+                ret[i,j] = -2 if bk & pos else -1
+            pos= pos >> 1
+        
+        return ret

@@ -6,6 +6,7 @@ from checkers.consts import *
 from test.test_checkers.white_moves import *
 from test.test_checkers.king_moves import *
 from test.test_checkers.king_jumps import *
+from test.test_checkers.board import *
 from argparse import Namespace
 
 class TestCheckers:
@@ -31,6 +32,9 @@ class BB_Tester:
         t.run()
 
         t = KingJumpsTester(self.args.c_data_folder)
+        t.run()
+
+        t = BoardTester(self.args.c_data_folder)
         t.run()
     
     def initialization(self):

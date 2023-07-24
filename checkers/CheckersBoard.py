@@ -29,8 +29,15 @@ class CheckersBoard:
     def _black_jumps(self) -> Tuple[int, int, int, int]:
         return self.bb_m.black_jumps(self.W, self.B, self.K)
 
-    def get_metrics(self, board: np.ndarray)->np.ndarray:
-        pass
+    def get_metrics(self)-> np.ndarray:
+
+        capped, potential, men, kings, mid, capturables, won = self.bb_m.bb_scores(self.W, self.B, self.K)
+        score = 4*capped + potential + men + 3*kings + capturables + 2*mid + 100*won
+
+        if score < 0:
+            return np.array([-1, capped, potential, men, kings,  mid, won])
+        else:
+            return np.array([1, capped, potential, men, kings,  mid, won])
 
     def as_np(self) -> np.ndarray:
         pass
