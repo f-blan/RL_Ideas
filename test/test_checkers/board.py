@@ -21,3 +21,4 @@ class BoardTester:
         b.W = 1
         b.B = 0x00000FFF
         assert b.get_metrics()[0] == -1
+        print("change")
