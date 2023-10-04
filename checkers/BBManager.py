@@ -487,7 +487,15 @@ class BBManager:
 
         return capped_score, potential_score, men_score, kings_score, mid_score, capturables_score, won
 
-    def bb_to_np(aself, W:int, B:int, K:int) -> np.ndarray:
+    def bb_reverse(self, x: int):
+        x = ((x & 0x55555555) << 1) | ((x & 0xAAAAAAAA) >> 1)
+        x = ((x & 0x33333333) << 2) | ((x & 0xCCCCCCCC) >> 2)
+        x = ((x & 0x0F0F0F0F) << 4) | ((x & 0xF0F0F0F0) >> 4)
+        x = ((x & 0x00FF00FF) << 8) | ((x & 0xFF00FF00) >> 8)
+        x = ((x & 0x0000FFFF) << 16) | ((x & 0xFFFF0000) >> 16)
+        return x
+
+    def bb_to_np(self, W:int, B:int, K:int) -> np.ndarray:
         ret = np.zeros((8, 4), dtype=int)
         wk = W & K
         bk = B & K 
