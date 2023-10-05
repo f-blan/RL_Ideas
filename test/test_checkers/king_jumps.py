@@ -13,6 +13,12 @@ class KingJumpsTester:
                 obj()
         print("---- END ----")
     
+    def single_ton(self):
+        b1 = CheckersBoard(self.data_folder)
+        b2 = CheckersBoard(self.data_folder)
+
+        assert b1.dict_wj is b2.dict_wj
+
     def white_jumps(self):
         b = CheckersBoard(self.data_folder)
 

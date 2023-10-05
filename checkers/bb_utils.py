@@ -29,7 +29,7 @@ def print_bb(bb:int, title: str = ""):
     if title!="":
         print(f"bitboard for {title}")
     else:
-        print(f"bitboard for {bb}")
+        print(f"bitboard for {bb} - {hex(bb)}")
     for i in range(0, 8):
         cur = tmp&mask
         cur = cur >> 28

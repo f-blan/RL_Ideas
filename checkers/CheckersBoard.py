@@ -5,10 +5,7 @@ from checkers.BBManager import BBManager
 
 class CheckersBoard:
 
-    def __init__(self, data_folder: str):
-        self.np_board = np.zeros((8,4))
-        self.np_board[0:3, :] = 1
-        self.np_board[5:8, :] = -1
+    def __init__(self, data_folder: str = None):
         self.W = W_START
         self.B = B_START
         self.K = 0

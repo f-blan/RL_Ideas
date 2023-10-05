@@ -5,6 +5,11 @@ import os
 import json, codecs
 
 class BBManager:
+    def __new__(cls):
+        if not hasattr(cls, 'instance'):
+            cls.instance = super(BBManager, cls).__new__(cls)
+        return cls.instance
+    
     def black_jumpers_only(self, W: int, B: int, K: int) -> Tuple[int, int]:
         not_occ = ~(W | B)&0xFFFFFFFF
         b_k = B & K
@@ -430,7 +435,26 @@ class BBManager:
             k_moves&= 0xFFFFFFFF  
         return movers, moves, k_movers, k_moves
 
-    def load_dicts(self, data_folder: str) -> Tuple[Dict, Dict, Dict, Dict]:
+    def apply_move(self, movers_bb: int, mover:int, move: int, K:int, is_king_move: bool, mover_color: int = 0)-> Tuple[int, int]:
+        ret_movers = movers_bb
+        ret_kings = K
+
+        ret_movers = (ret_movers & ~mover) | move
+        
+        promote_mask = 0xF0000000 if mover_color == 1 else 0x0000000F
+        if is_king_move:
+            ret_kings &= ~mover
+        if move & promote_mask != 0 or is_king_move:
+            ret_kings |= move
+
+        return ret_movers, ret_kings
+
+
+    def load_dicts(self, data_folder: str = None) -> Tuple[Dict, Dict, Dict, Dict]:
+        if hasattr(self, "dict_wm"):
+            return self.dict_wm, self.dict_bm, self.dict_wj, self.dict_wj
+        
+        assert data_folder is not None, "data folder required"
         ret_wm = {}
         ret_bm = {}
         ret_wj = {}
@@ -463,6 +487,10 @@ class BBManager:
         for k in d:
             ret_bj[int(k)] = (np.array(d[k][0]), np.array(d[k][1]))
 
+        self.dict_wm = ret_wm
+        self.dict_wj = ret_wj
+        self.dict_bm = ret_bm
+        self.dict_bj = ret_bj
         return ret_wm, ret_bm, ret_wj, ret_bj
 
     def bb_scores(self, W: int, B: int, K: int)-> Tuple[int, int, int, int, int, int, int]:
