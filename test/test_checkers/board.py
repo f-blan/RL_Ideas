@@ -1,7 +1,7 @@
-from checkers.CheckersBoard import CheckersBoard
-from checkers.bb_utils import *
-from checkers.MoverBoard import MoverBoard
-from checkers.consts import *
+from checkers.logic.CheckersBoard import CheckersBoard
+from checkers.logic.bb_utils import *
+from checkers.logic.MoverBoard import MoverBoard
+from checkers.logic.consts import *
 from typing import List
 
 class BoardTester:

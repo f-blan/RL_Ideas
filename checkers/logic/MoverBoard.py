@@ -1,8 +1,8 @@
-from checkers.CheckersBoard import CheckersBoard
-from typing import List
+from checkers.logic.CheckersBoard import CheckersBoard
+from typing import List, Tuple
 import numpy as np
 import itertools as it
-from checkers.bb_utils import print_bb
+from checkers.logic.bb_utils import print_bb
 
 class MoverBoard(CheckersBoard):
     """
@@ -13,6 +13,10 @@ class MoverBoard(CheckersBoard):
 
     def __init__(self, data_folder: str, board: CheckersBoard = None):
         super().__init__(data_folder)
+        if board is not None:
+            self.W = board.W
+            self.B = board.B
+            self.K = board.K
         """
         self.np_board = np.zeros((8,4))
         self.np_board[0:3, :] = 1
@@ -24,7 +28,18 @@ class MoverBoard(CheckersBoard):
         self.W = self.bb_m.bb_reverse(self.B)
         self.B = self.bb_m.bb_reverse(tmp)
         self.K = self.bb_m.bb_reverse(self.K)
-    
+
+    def generate_movers_and_moves(self) -> Tuple[List[int], List[int]]:
+        movers, moves, k_movers, k_moves = self._white_moves()
+        jumpers, jumps, k_jumpers, k_jumps = self._white_jumps()
+
+        ret_movers = [-1]
+        ret_moves = [-1]
+        #TODO
+
+        return ret_movers, ret_moves
+
+
     def generate_next(self) -> List[CheckersBoard]:
         movers, moves, k_movers, k_moves = self._white_moves()
         jumpers, jumps, k_jumpers, k_jumps = self._white_jumps()

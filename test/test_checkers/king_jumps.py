@@ -1,5 +1,5 @@
-from checkers.CheckersBoard import CheckersBoard
-from checkers.bb_utils import *
+from checkers.logic.CheckersBoard import CheckersBoard
+from checkers.logic.bb_utils import *
 
 class KingJumpsTester:
     def __init__(self, data_folder: str):

@@ -1,7 +1,7 @@
 import numpy as np
-from checkers.consts import *
-from checkers.bb_utils import *
-from checkers.BBManager import BBManager
+from checkers.logic.consts import *
+from checkers.logic.bb_utils import *
+from checkers.logic.BBManager import BBManager
 
 class CheckersBoard:
 

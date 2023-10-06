@@ -1,4 +1,4 @@
-from checkers.consts import *
+from checkers.logic.consts import *
 from typing import Tuple, Dict
 import numpy as np
 import os
@@ -538,23 +538,3 @@ class BBManager:
         x = ((x & 0x00FF00FF) << 8) | ((x & 0xFF00FF00) >> 8)
         x = ((x & 0x0000FFFF) << 16) | ((x & 0xFFFF0000) >> 16)
         return x
-
-    def bb_to_np(self, W:int, B:int, K:int) -> np.ndarray:
-        ret = np.zeros((8, 4), dtype=int)
-        wk = W & K
-        bk = B & K 
-
-        pos = 0x80000000
-        i=0
-        j=0
-        while pos != 0:
-            if j == 4:
-                j=0
-                i+=1
-            if W & pos == 1:
-                ret[i,j] = 2 if wk & pos else 1
-            elif B & pos == 1:
-                ret[i,j] = -2 if bk & pos else -1
-            pos= pos >> 1
-        
-        return ret

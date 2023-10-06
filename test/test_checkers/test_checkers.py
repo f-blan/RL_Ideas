@@ -1,6 +1,6 @@
-from checkers.CheckersBoard import CheckersBoard
-from checkers.bb_utils import *
-from checkers.consts import *
+from checkers.logic.CheckersBoard import CheckersBoard
+from checkers.logic.bb_utils import *
+from checkers.logic.consts import *
 
 
 from test.test_checkers.white_moves import *

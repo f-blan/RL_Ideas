@@ -1,7 +1,7 @@
 from typing import Tuple
 import numpy as np
 import json, codecs
-from checkers.BBManager import BBManager
+from checkers.logic.BBManager import BBManager
 import os
 
 def generate_masks_whites() -> Tuple[int, int, int, int, int]:
@@ -151,5 +151,25 @@ def generate_normal_moves(folder: str) -> None:
     filename = os.path.join(folder, "black_moves.json")
     json.dump(obj=black_moves_dict, fp=codecs.open(filename, "w"))
     
-    
+def bb_to_np(W:int, B:int, K:int) -> np.ndarray:
+        ret = np.zeros((8, 8), dtype=int)
+        wk = W & K
+        bk = B & K 
+
+
+        pos = 0x80000000
+        i=0
+        j=1
+        while pos != 0:
+            if j >= 8:
+                j= 0 if i%2 == 0 else 1
+                i+=1
+            if W & pos != 0:
+                ret[i,j] = 2 if wk & pos else 1
+            elif B & pos != 0:
+                ret[i,j] = -2 if bk & pos else -1
+            j+=2
+            pos= pos >> 1
+        
+        return ret
 
