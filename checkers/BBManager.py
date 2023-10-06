@@ -449,10 +449,26 @@ class BBManager:
 
         return ret_movers, ret_kings
 
+    def apply_jump(self, jumpers_bb: int, jumper: int, jump: int, apply_mask: int, non_jumpers: int, K: int, is_king_move: bool, mover_color: int = 0) -> Tuple[int, int, int]:
+        ret_jumpers = jumpers_bb
+        ret_non_jumpers = non_jumpers
+        ret_kings = K
+
+        ret_jumpers = (ret_jumpers & ~jumper) | jump
+        ret_non_jumpers = ret_non_jumpers & apply_mask
+
+        promote_mask = 0xF0000000 if mover_color == 1 else 0x0000000F
+        if is_king_move:
+            ret_kings &= ~jumper
+            ret_kings &= apply_mask
+        if jump & promote_mask != 0 or is_king_move:
+            ret_kings |= jump
+        
+        return ret_jumpers, ret_non_jumpers, ret_kings
 
     def load_dicts(self, data_folder: str = None) -> Tuple[Dict, Dict, Dict, Dict]:
         if hasattr(self, "dict_wm"):
-            return self.dict_wm, self.dict_bm, self.dict_wj, self.dict_wj
+            return self.dict_wm, self.dict_bm, self.dict_wj, self.dict_bj
         
         assert data_folder is not None, "data folder required"
         ret_wm = {}

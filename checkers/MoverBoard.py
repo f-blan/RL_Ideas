@@ -2,6 +2,7 @@ from checkers.CheckersBoard import CheckersBoard
 from typing import List
 import numpy as np
 import itertools as it
+from checkers.bb_utils import print_bb
 
 class MoverBoard(CheckersBoard):
     """
@@ -30,10 +31,25 @@ class MoverBoard(CheckersBoard):
 
         ret = []
         
-        if jumpers != 0:
-            pass 
-        
         n=1
+
+        if jumpers != 0 or k_jumpers != 0:
+            while n & 0xFFFFFFFF !=0:
+                if n & jumpers != 0 or n & k_jumpers !=0:
+                    iterator_j = self.dict_wj[n][0] if n&k_jumpers ==0 else it.chain(self.dict_wj[n][0], self.dict_bj[n][0])
+                    iterator_m = self.dict_wj[n][1] if n&k_jumpers ==0 else it.chain(self.dict_wj[n][1], self.dict_bj[n][1])
+                    for j,m in zip(iterator_j, iterator_m):
+                        if j&jumps!=0 and (self.B ^ self.K) & ~m != 0:
+                            to_add = CheckersBoard()
+                            to_add.W, to_add.B, to_add.K = self.bb_m.apply_jump(self.W, n, j, m, self.B, self.K, False)
+                            ret.append(to_add)
+                        elif j&k_jumps != 0 and self.B & ~m != 0:
+                            to_add = CheckersBoard()
+                            to_add.W, to_add.B, to_add.K = self.bb_m.apply_jump(self.W, n, j, m, self.B,  self.K, True)
+                            ret.append(to_add)
+                n=n<<1
+            return ret
+    
         while n & 0xFFFFFFFF != 0:
             if n & movers != 0 or n & k_movers != 0:
                 iterator = self.dict_wm[n] if n & k_movers == 0 else it.chain(self.dict_wm[n], self.dict_bm[n])

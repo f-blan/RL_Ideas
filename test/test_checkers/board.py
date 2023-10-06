@@ -87,5 +87,49 @@ class BoardTester:
         ws, bs, ks = self._reduce_list(b.generate_next())
         assert len(ws) == 4 and len(ks) == 4 and  0x00400000 in ks and 0x00800000 in ks and 0x00004000 in ks and 0x00008000 in ks
         
+    def test_jumps_generation(self):
+        b = MoverBoard(self.data_folder)
+        
+        b.W = 0x80000000
+        b.B = 0x08000000
+        ws, bs, ks = self._reduce_list(b.generate_next())
+        assert len(ws) == 1 and 0x04000000 in ws
+
+        b.W = 0x80000000
+        b.B = 0x04000000
+        ws, bs, ks = self._reduce_list(b.generate_next())
+        assert len(ws) == 1 and 0x00400000 in ws and 0 in bs
+
+        b.W = 0x40000000
+        b.B = 0x06000000
+        ws, bs, ks = self._reduce_list(b.generate_next())
+        assert len(ws) == 2 and (0x00200000 in ws and 0x04000000 in bs) and (0x00800000 in ws and 0x02000000 in bs)
+
+        b.W = 0x00000200
+        b.B = 0x00000060
+        ws, bs, ks = self._reduce_list(b.generate_next())
+        assert len(ws) == 2 and (0x00000040 in bs and 1 in ks) and (0x00000020 in bs and 0x00000004 in ks)
+
+        b.W = 0x00000200
+        b.B = 0x00000060
+        b.K = b.B
+        ws, bs, ks = self._reduce_list(b.generate_next())
+        assert len(ws) == 0
+
+        b.W = 0x00040000
+        b.B = 0x0000C000
+        b.K = 0x0004C000
+        ws, bs, ks = self._reduce_list(b.generate_next())
+        assert len(ws) == 2 and 0x00004800 in ks and 0x00008200 in ks
+
+        b.W = 0x00040000
+        b.B = 0x00C00000
+        b.K = 0x00C40000
+        ws, bs, ks = self._reduce_list(b.generate_next())
+        assert len(ws) == 2 and 0x08400000 in ks and 0x02800000 in ks
+
+        
+        
+        
         
 

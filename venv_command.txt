@@ -1,4 +1,8 @@
 Set-ExecutionPolicy Unrestricted -Scope Process
 venv/Scripts/Activate.ps1
 
+venv/Scripts/python -m pip install x
+
 python -m venv c:\path\to\myenv
+
+clear terminal : ctrl + shift + c + ctrl + shift + l
