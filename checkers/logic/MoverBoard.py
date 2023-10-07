@@ -12,11 +12,7 @@ class MoverBoard(CheckersBoard):
     """
 
     def __init__(self, data_folder: str, board: CheckersBoard = None):
-        super().__init__(data_folder)
-        if board is not None:
-            self.W = board.W
-            self.B = board.B
-            self.K = board.K
+        super().__init__(data_folder, board)
         """
         self.np_board = np.zeros((8,4))
         self.np_board[0:3, :] = 1
@@ -29,15 +25,48 @@ class MoverBoard(CheckersBoard):
         self.B = self.bb_m.bb_reverse(tmp)
         self.K = self.bb_m.bb_reverse(self.K)
 
-    def generate_movers_and_moves(self) -> Tuple[List[int], List[int]]:
+    def get_canonical_perspective(self, turn: int) -> CheckersBoard:
+        #return the board with white side on top
+
+        ret = None
+        if turn == 1:
+            self.reverse()  
+            ret = CheckersBoard(board=self)
+            self.reverse()
+        else:
+            ret = CheckersBoard(board=self)
+        return ret
+
+    def generate_movers_and_moves(self) -> Tuple[np.ndarray, np.ndarray]:
         movers, moves, k_movers, k_moves = self._white_moves()
         jumpers, jumps, k_jumpers, k_jumps = self._white_jumps()
 
-        ret_movers = [-1]
-        ret_moves = [-1]
-        #TODO
+        ret_movers = []
+        ret_moves = []
 
-        return ret_movers, ret_moves
+        n=1
+        if jumpers != 0 or k_jumpers!=0:
+            while n& 0xFFFFFFFF != 0:
+                if n&jumpers != 0 or n&k_jumpers != 0:
+                    iterator_j = self.dict_wj[n][0] if n&k_jumpers ==0 else it.chain(self.dict_wj[n][0], self.dict_bj[n][0])
+                    iterator_m = self.dict_wj[n][1] if n&k_jumpers ==0 else it.chain(self.dict_wj[n][1], self.dict_bj[n][1])
+                    for j, m in zip(iterator_j, iterator_m):
+                        if j&jumps!= 0 and (self.B^self.K) & ~m != 0 or j&k_jumps != 0 and self.B & ~m != 0:
+                            ret_movers.append(n)
+                            ret_moves.append(j)
+                n = n<<1
+            return np.array(ret_movers), np.array(ret_moves)
+        
+        while n & 0xFFFFFFFF != 0:
+            if n & movers != 0 or n & k_movers != 0:
+                iterator = self.dict_wm[n] if n & k_movers == 0 else it.chain(self.dict_wm[n], self.dict_bm[n])
+                for m in iterator:
+                    if m & moves != 0 or m & k_moves != 0:
+                        ret_movers.append(n)
+                        ret_moves.append(m)
+            n = n<<1
+
+        return np.array(ret_movers), np.array(ret_moves)
 
 
     def generate_next(self) -> List[CheckersBoard]:

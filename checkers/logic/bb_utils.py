@@ -150,7 +150,16 @@ def generate_normal_moves(folder: str) -> None:
 
     filename = os.path.join(folder, "black_moves.json")
     json.dump(obj=black_moves_dict, fp=codecs.open(filename, "w"))
-    
+
+def set_bit_to_coords(bb: int) -> Tuple[int, int]:
+    bl = 0x80000000.bit_length()-bb.bit_length()
+    ret_y = (bl//4)
+    ret_x = (bl%4)*2 if ret_y%2==1 else (bl%4)*2 +1
+    return ret_y, ret_x
+
+def coords_to_set_bit(y: int, x: int) -> int:
+    return 0x80000000 >> ((4*y) + x//2)
+
 def bb_to_np(W:int, B:int, K:int) -> np.ndarray:
         ret = np.zeros((8, 8), dtype=int)
         wk = W & K

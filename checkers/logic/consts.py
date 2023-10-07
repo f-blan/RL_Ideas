@@ -1,4 +1,8 @@
 
+#turn constants
+W_TURN = 0
+B_TURN = 1
+
 #masks for the white pieces
 W_START = 0xfff00000
 W_L3 = 0x0e0e0e0e

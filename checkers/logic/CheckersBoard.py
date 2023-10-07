@@ -5,10 +5,16 @@ from checkers.logic.BBManager import BBManager
 
 class CheckersBoard:
 
-    def __init__(self, data_folder: str = None):
-        self.W = W_START
-        self.B = B_START
-        self.K = 0
+    def __init__(self, data_folder: str = None, board = None):
+        if board is None:
+            self.W = W_START
+            self.B = B_START
+            self.K = 0
+        else:
+            self.W = board.W
+            self.B = board.B
+            self.K = board.K
+
         self.bb_m = BBManager()
 
         self.dict_wm, self.dict_bm, self.dict_wj, self.dict_bj = self.bb_m.load_dicts(data_folder)
