@@ -3,6 +3,7 @@ from typing import List, Tuple
 import numpy as np
 import itertools as it
 from checkers.logic.bb_utils import print_bb
+from checkers.CheckersConstants import CheckersConstants as ccs
 
 class MoverBoard(CheckersBoard):
     """
@@ -11,7 +12,7 @@ class MoverBoard(CheckersBoard):
         By convention, self.W are the moving pieces
     """
 
-    def __init__(self, data_folder: str, board: CheckersBoard = None):
+    def __init__(self, data_folder: str = None, board: CheckersBoard = None):
         super().__init__(data_folder, board)
         """
         self.np_board = np.zeros((8,4))
@@ -29,7 +30,7 @@ class MoverBoard(CheckersBoard):
         #return the board with white side on top
 
         ret = None
-        if turn == 1:
+        if turn == ccs.BLACK_TURN:
             self.reverse()  
             ret = CheckersBoard(board=self)
             self.reverse()

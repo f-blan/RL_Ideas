@@ -3,6 +3,10 @@ from checkers.GUI import CheckersGUI, SimpleGUI, TerminalGUI
 from checkers.logic.MoverBoard import MoverBoard
 from queue import Queue
 from checkers.GUI.Commands import Commands as cmds
+from checkers.logic.bb_utils import print_bb, bb_to_np
+from checkers.CheckersConstants import CheckersConstants as ccs
+from checkers.logic.CheckersBoard import CheckersBoard
+import numpy as np
 
 class GameHandler:
     def __init__(self, args: Namespace) -> None:
@@ -30,34 +34,58 @@ class GameHandler:
         self.write_q.put([cmds.GUI_TERMINATE])
 
     def _player_vs_player(self):
-        turn = 0
+        turn = ccs.WHITE_TURN
         board = MoverBoard(self.args.c_data_folder)
         self.write_q.put([cmds.GAME_SCREEN])
         n_moves = 0
 
         movers, moves = board.generate_movers_and_moves()
         next_boards = board.generate_next()
-
-        while n_moves < 100 and len(movers)>0:
+        boards = []
+        canon_b = CheckersBoard()
+        while n_moves < 100 and len(movers)>0 and board.W != 0 and board.B != 0:
             canon_b = board.get_canonical_perspective(turn)
-            self.write_q.put([cmds.ACQUIRE_HUMAN_INPUT, canon_b, movers, moves])
+            self.write_q.put([cmds.ACQUIRE_HUMAN_INPUT, turn, canon_b, movers, moves])
             cmd = self.read_q.get()
 
             if cmd[0] == cmds.QUIT_GAME:
                 print("received quit")
                 return
+            
+            if cmd[0] == cmds.UNDO_MOVE and len(boards) > 0:
+                board = boards.pop()
+                movers, moves = board.generate_movers_and_moves()
 
+                next_boards = board.generate_next()
+                n_moves-=1
+                turn = ccs.WHITE_TURN if turn == ccs.BLACK_TURN else ccs.BLACK_TURN
+                continue
+            
+            boards.append(MoverBoard(board=board))
             chosen_board = next_boards[cmd[1]]
             board.W, board.B, board.K = chosen_board.W, chosen_board.B, chosen_board.K
 
             board.reverse()
-            turn = 0 if turn == 1 else 1
+            turn = ccs.WHITE_TURN if turn == ccs.BLACK_TURN else ccs.BLACK_TURN
 
             movers, moves = board.generate_movers_and_moves()
+
             next_boards = board.generate_next()
 
             n_moves+=1
+            canon_b = board.get_canonical_perspective(turn)
+            
+        if board.B == 0 or board.W == 0:
+            self.write_q.put([cmds.WHITE_WINS if canon_b.B == 0 else cmds.BLACK_WINS, -1, canon_b, np.array([]), np.array([])])
+        else:
+            print(n_moves)
+            print(movers)
+            print(moves)
+            self.write_q.put([cmds.DRAW_GAME, -1, canon_b, np.array([]), np.array([])])
         
+        cmd = self.read_q.get()
+        
+            
     
     def _cpu_vs_cpu(self):
         pass

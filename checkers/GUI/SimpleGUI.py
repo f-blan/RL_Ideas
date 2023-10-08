@@ -1,7 +1,8 @@
 from argparse import Namespace
 from checkers.GUI.CheckersGUI import CheckersGUI
+from checkers.logic.BBManager import BBManager
 from checkers.logic.CheckersBoard import CheckersBoard
-from checkers.logic.bb_utils import bb_to_np, coords_to_set_bit, set_bit_to_coords
+from checkers.logic.bb_utils import bb_to_np, coords_to_set_bit, set_bit_to_coords, print_bb
 from argparse import Namespace
 import PySimpleGUI as sg
 from queue import Queue
@@ -9,6 +10,7 @@ import numpy as np
 import base64
 import os
 from checkers.GUI.Commands import Commands as cmds
+from checkers.CheckersConstants import CheckersConstants as ccs
 
 class SimpleGUI(CheckersGUI):
     def __init__(self, args: Namespace, read_q: Queue, write_q: Queue) -> None:
@@ -19,6 +21,14 @@ class SimpleGUI(CheckersGUI):
             "CPU vs CPU": cmds.START_PVC_MODE,
             "Exit": cmds.EXIT_APP,
             sg.WIN_CLOSED: cmds.EXIT_APP
+        }
+        self.header_msg = {
+            ccs.WHITE_TURN: "White's turn to move",
+            ccs.BLACK_TURN: "Black's turn to move",
+            cmds.WHITE_WINS: "White wins!",
+            cmds.BLACK_WINS: "Black wins!",
+            cmds.DRAW_GAME:  "Game is a draw!"
+
         }
         self.code_to_png = {
             0: ["white_tile.png", "black_tile.png", "white_tile_highlighted.png"],
@@ -38,7 +48,7 @@ class SimpleGUI(CheckersGUI):
 
     def _find_choice(self, movers: np.array, moves: np.array, mover_bb: int, move_bb: int) -> int:
         p_i = np.argmax(movers == mover_bb)
-        return p_i+np.argmax(movers[p_i:] == move_bb)
+        return p_i+np.argmax(moves[p_i:] == move_bb)
 
     def menu_screen(self) -> str:
         layout = [[sg.Text("Welcome!")], [sg.Text("Select the Game Mode:")], [sg.Button("Player vs Player")], [sg.Button("Player vs CPU")], [sg.Button("CPU vs CPU")], [sg.Button("Exit")]]
@@ -61,7 +71,7 @@ class SimpleGUI(CheckersGUI):
 
     def game_screen(self) -> str:
         
-        header = [[sg.Button("<---", key="-EXIT-")], sg.Text("Game Start", key="-TURN-")]
+        header = [[sg.Button("<---", key="-EXIT-"), sg.Button("Undo", key="-UNDO-")], sg.Text("Game Start", key="-TURN-")]
         board = [
             [self.board_piece(str(j)+ "-"+str(i), (((j+1)%2)+i)%2, False, False) for i in range(1,9)] for j in range(1,9)
         ]
@@ -73,27 +83,46 @@ class SimpleGUI(CheckersGUI):
         window = sg.Window("BE_Checkers - Main Menu", layout, finalize=True)
         
         while True:
-            cmd, b, movers, moves = self.read_q.get()
+            cmd, turn, b, movers, moves = self.read_q.get()
+
+            if cmd == cmds.WHITE_WINS or cmd == cmds.BLACK_WINS or cmd == cmds.DRAW_GAME:
+                window["-TURN-"].update(self.header_msg[cmd])
+                window["-UNDO-"].update(disabled = True)
+
+            else:
+                window["-TURN-"].update(self.header_msg[turn])
+            if turn == ccs.BLACK_TURN:
+                movers = np.array(list(map(BBManager().bb_reverse, movers)))
+                moves = np.array(list(map(BBManager().bb_reverse, moves)))
+            
             response = [cmds.QUIT_GAME]
             move_selected = False
             piece_selected= False
+            highlighted = []
+            piece = -1
+
             np_b = bb_to_np(b.W, b.B, b.K)
             for j in range(0, 8):
                 for i in range(0, 8):
                     window[str(j+1) + "-" + str(i+1)].update(image_filename=self.code_to_png[np_b[j,i]][self._coords_color(j,i, False)])
            
-            highlighted = []
-            piece = -1
-
+            submit_response = True
             while move_selected == False:
 
                 event, values = window.read()
                 
+                if event == "-UNDO-":
+                    self.write_q.put([cmds.UNDO_MOVE])
+                    submit_response = False
+                    break
                 if event == "-EXIT-" or event == sg.WIN_CLOSED:
+                    print("GUI SENDING QUIT")
                     window.close()
                     return [cmds.QUIT_GAME]
                 
+                
                 j, i = event.split("-")
+                
                 j = int(j)-1
                 i = int(i)-1
                 if self._coords_color(j,i,False) == 1:
@@ -101,8 +130,8 @@ class SimpleGUI(CheckersGUI):
                 if piece_selected == True:
                     for h in highlighted:
                         window[str(h[0]+1) + "-" + str(h[1]+1)].update(image_filename=self.code_to_png[np_b[h[0],h[1]]][self._coords_color(h[0],h[1], False)])
-                        if h[0] == j and h[1] == i:
-                            print("building response")
+                        h_bb = coords_to_set_bit(h[0], h[1])
+                        if h[0] == j and h[1] == i and h_bb != piece:
                             response = [cmds.PROCESS_ACQUIRED_MOVE, self._find_choice(movers, moves, piece, coords_to_set_bit(j,i))]
                             move_selected = True
                             break
@@ -121,7 +150,8 @@ class SimpleGUI(CheckersGUI):
                         highlighted.append((y,x))
                         window[str(y+1) + "-" + str(x+1)].update(image_filename=self.code_to_png[np_b[y,x]][self._coords_color(y,x, True)])
             
-            print("gui sends", response)
-            self.write_q.put(response)
+            if submit_response:
+                print("gui sends", response)
+                self.write_q.put(response)
 
         

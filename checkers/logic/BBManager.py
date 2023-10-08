@@ -14,7 +14,7 @@ class BBManager:
         not_occ = ~(W | B)&0xFFFFFFFF
         b_k = B & K
         movers = 0
-        b = B ^ K
+        b = B ^ b_k
 
         tmp = (not_occ>>4) & W
         movers |= (W_R3L&b)&(tmp>>3)
@@ -56,7 +56,7 @@ class BBManager:
         not_occ = ~(W | B)&0xFFFFFFFF
         b_k = B & K
         moves = 0
-        b = B ^ K
+        b = B ^ b_k
 
         tmp = (W << 4)&not_occ
         moves |= ((W_L3R&b)<<9)&tmp
@@ -104,7 +104,7 @@ class BBManager:
         b_k = B & K
         movers = 0
         moves = 0
-        b = B ^ K
+        b = B ^ b_k
 
         tmp = (not_occ>>4) & W
         movers |= (W_R3L&b)&(tmp>>3)
@@ -184,7 +184,7 @@ class BBManager:
         not_occ = ~(W | B)&0xFFFFFFFF
         w_k = W & K
         movers = 0
-        w = W ^ K
+        w = W ^ w_k
 
         tmp = (not_occ<<4) & B
         movers |= (W_L3R&w)&(tmp<<3)
@@ -226,7 +226,7 @@ class BBManager:
         not_occ = ~(W | B)&0xFFFFFFFF
         w_k = W & K
         moves = 0
-        w = W ^ K
+        w = W ^ w_k
 
         tmp = (B >> 4)&not_occ
         moves |= ((W_R3L&w)>>9)&tmp
@@ -275,7 +275,7 @@ class BBManager:
         w_k = W & K
         movers = 0
         moves = 0
-        w = W ^ K
+        w = W ^ w_k
 
         tmp = (not_occ<<4) & B
         movers |= (W_L3R&w)&(tmp<<3)
@@ -353,7 +353,7 @@ class BBManager:
     def black_moves(self, W: int, B: int, K: int) -> Tuple[int, int, int, int]:
         not_occ = ~(W | B)&0xFFFFFFFF
         b_k = B&K
-        b = B ^ K
+        b = B ^ b_k
 
         movers = (not_occ >> 4) & b
         movers |= ((not_occ&W_R3L) >> 5) & b
@@ -396,7 +396,7 @@ class BBManager:
     def white_moves(self, W: int, B: int, K: int) -> Tuple[int, int, int, int]:
         not_occ = ~(W | B)&0xFFFFFFFF
         w_k = W&K
-        w = W ^ K
+        w = W ^ w_k
 
         movers = (not_occ << 4) & w
         movers |= ((not_occ&W_L3R) << 5) & w
@@ -518,7 +518,7 @@ class BBManager:
 
         capped_score = (24-B.bit_count())-(24-W.bit_count())
         potential_score = (w_moves | wk_moves).bit_count() - (b_moves | bk_moves).bit_count()
-        men_score = (W^K).bit_count()-(B^K).bit_count()
+        men_score = (W^(W&K)).bit_count()-(B^(B&K)).bit_count()
         kings_score = (W&K).bit_count()-(B&K).bit_count()
         mid_score = (W&0x000FF000).bit_count()-(B&0x000FF000)
         capturables_score = (w_jumpers | wk_jumpers).bit_count()-(b_jumpers | bk_jumpers).bit_count()
