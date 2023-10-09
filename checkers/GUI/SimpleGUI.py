@@ -97,12 +97,10 @@ class SimpleGUI(CheckersGUI):
                 event, values = window.read()
                 
                 if event == "-UNDO-":
-                    print("gui sending UNDO")
                     self.write_q.put([cmds.UNDO_MOVE])
                     submit_response = False
                     break
                 if event == "-EXIT-" or event == sg.WIN_CLOSED:
-                    print("GUI SENDING QUIT")
                     window.close()
                     return [cmds.QUIT_GAME]
                 
@@ -137,7 +135,6 @@ class SimpleGUI(CheckersGUI):
                         window[str(y+1) + "-" + str(x+1)].update(image_filename=self.code_to_png[np_b[y,x]][self._coords_color(y,x, True)])
             
             if submit_response:
-                print("gui will now send", response)
                 self.write_q.put(response)
             
             return response
@@ -176,7 +173,7 @@ class SimpleGUI(CheckersGUI):
             cmd = data[0]
             turn = data[1]
             b = data[2]
-            
+
             np_b = bb_to_np(b.W, b.B, b.K)
             for j in range(0, 8):
                 for i in range(0, 8):
@@ -195,7 +192,6 @@ class SimpleGUI(CheckersGUI):
                 response = self._process_CPU_input(window, data[3])
             
             if response[0] == cmds.QUIT_GAME:
-                    print("gui sending quit")
                     return response
         
         while True:

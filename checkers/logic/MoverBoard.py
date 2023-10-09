@@ -42,9 +42,6 @@ class MoverBoard(CheckersBoard):
         movers, moves, k_movers, k_moves = self._white_moves()
         jumpers, jumps, k_jumpers, k_jumps = self._white_jumps()
 
-        print_bb(movers, "movers")
-        print_bb(jumpers, "jumpers")
-
         ret_movers = []
         ret_moves = []
 

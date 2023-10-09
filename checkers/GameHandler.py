@@ -40,10 +40,6 @@ class GameHandler:
         self.write_q.put([cmds.GAME_SCREEN])
         n_moves = 0
 
-        board.W = 0x00000800
-        board.K = 0x00000800
-        board.B = 0x01000008
-
         movers, moves = board.generate_movers_and_moves()
         next_boards = board.generate_next()
         boards = []
@@ -54,7 +50,6 @@ class GameHandler:
             self.write_q.put([cmds.ACQUIRE_HUMAN_INPUT, turn, canon_b, movers, moves])
             
             cmd = self.read_q.get()
-            print("handler received", cmd)
             if cmd[0] == cmds.QUIT_GAME:
                 print("received quit")
                 return
@@ -91,7 +86,6 @@ class GameHandler:
             print(moves)
             self.write_q.put([cmds.DRAW_GAME, -1, canon_b, np.array([]), np.array([])])
         
-        print("quit after game ended")
         cmd = self.read_q.get()
         
             
@@ -125,10 +119,8 @@ class GameHandler:
             canon_b = board.get_canonical_perspective(turn)
 
             if turn == player_color:
-                print(n_moves, "handler sends available moves")
                 self.write_q.put([cmds.ACQUIRE_HUMAN_INPUT, turn, canon_b, movers, moves])
             else:
-                print(n_moves, "handler sends AI decision")
                 ai.copy_state(board)
                 next_state = ai.get_next_state()
                 self.write_q.put([cmds.PROCESS_CPU_INPUT, turn, canon_b, next_state])
@@ -140,21 +132,19 @@ class GameHandler:
             
             if cmd[0] == cmds.UNDO_MOVE and len(boards) > 0:
                 board = boards.pop()
+                board = boards.pop()
                 movers, moves = board.generate_movers_and_moves()
 
                 next_boards = board.generate_next()
-                n_moves-=1
-                turn = ccs.WHITE_TURN if turn == ccs.BLACK_TURN else ccs.BLACK_TURN
+                n_moves-=2
                 continue
             
             boards.append(MoverBoard(board=board))
             
             if player_color == turn:
-                print("processing human input")
                 chosen_board = next_boards[cmd[1]]
                 board.W, board.B, board.K = chosen_board.W, chosen_board.B, chosen_board.K
             else:
-                print("processing cpu input")
                 board.W, board.B, board.K = next_state.W, next_state.B, next_state.K
 
             board.reverse()

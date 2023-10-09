@@ -57,15 +57,16 @@ class BBManager:
         b_k = B & K
         moves = 0
         b = B ^ b_k
+        w = W ^ (W&K)
 
-        tmp = (W << 4)&not_occ
+        tmp = (w << 4)&not_occ
         moves |= ((W_L3R&b)<<9)&tmp
         moves |= ((W_R3L&b)<<7)&tmp
 
-        tmp = ((W_R3L&W)<<3) & not_occ
+        tmp = ((W_R3L&w)<<3) & not_occ
         moves |= ((b&W_L3)<<7) &tmp
 
-        tmp = ((W_L3R&W)<<5) &not_occ
+        tmp = ((W_L3R&w)<<5) &not_occ
         moves |= ((b&W_R3)<<9) & tmp
 
         moves &= 0xFFFFFFFF 
@@ -105,25 +106,26 @@ class BBManager:
         movers = 0
         moves = 0
         b = B ^ b_k
+        w = W ^ (W&K)
 
-        tmp = (not_occ>>4) & W
+        tmp = (not_occ>>4) & w
         movers |= (W_R3L&b)&(tmp>>3)
         movers |= (W_L3R&b)&(tmp>>5)
 
-        tmp = ((W_R5R&not_occ)>>3)&W
+        tmp = ((W_R5R&not_occ)>>3)&w
         movers|= (W_L3&b)&(tmp>>4)
 
-        tmp = ((W_R3L&not_occ)>>5)&W
+        tmp = ((W_R3L&not_occ)>>5)&w
         movers|= (W_R3&b)&(tmp>>4)
 
-        tmp = (W << 4)&not_occ
+        tmp = (w << 4)&not_occ
         moves |= ((W_L3R&b)<<9)&tmp
         moves |= ((W_R3L&b)<<7)&tmp
 
-        tmp = ((W_R3L&W)<<3) & not_occ
+        tmp = ((W_R3L&w)<<3) & not_occ
         moves |= ((b&W_L3)<<7) &tmp
 
-        tmp = ((W_L3R&W)<<5) &not_occ
+        tmp = ((W_L3R&w)<<5) &not_occ
         moves |= ((b&W_R3)<<9) & tmp
 
         moves &= 0xFFFFFFFF 
@@ -224,18 +226,19 @@ class BBManager:
 
     def white_jumps_only(self, W: int, B: int, K: int) -> Tuple[int, int]:
         not_occ = ~(W | B)&0xFFFFFFFF
+        b = B^ (B&K)
         w_k = W & K
         moves = 0
         w = W ^ w_k
 
-        tmp = (B >> 4)&not_occ
+        tmp = (b >> 4)&not_occ
         moves |= ((W_R3L&w)>>9)&tmp
         moves |= ((W_L3R&w)>>7)&tmp
 
-        tmp = ((W_L3R&B)>>3) & not_occ
+        tmp = ((W_L3R&b)>>3) & not_occ
         moves |= ((w&W_R3)>>7) &tmp
 
-        tmp = ((W_R3L&B)>>5) &not_occ
+        tmp = ((W_R3L&b)>>5) &not_occ
         moves |= ((w&W_L3)>>9) & tmp
 
         moves&= 0xFFFFFFFF
@@ -272,29 +275,30 @@ class BBManager:
 
     def white_jumps(self, W: int, B: int, K: int) -> Tuple[int,int,int,int]:
         not_occ = ~(W | B)&0xFFFFFFFF
+        b = B^ (B & K)
         w_k = W & K
         movers = 0
         moves = 0
         w = W ^ w_k
 
-        tmp = (not_occ<<4) & B
+        tmp = (not_occ<<4) & b
         movers |= (W_L3R&w)&(tmp<<3)
         movers |= (W_R3L&w)&(tmp<<5)
 
-        tmp = ((W_L5L&not_occ)<<3)&B
+        tmp = ((W_L5L&not_occ)<<3)&b
         movers|= (W_R3&w)&(tmp<<4)
 
-        tmp = ((W_L3R&not_occ)<<5)&B
+        tmp = ((W_L3R&not_occ)<<5)&b
         movers|= (W_L3&w)&(tmp<<4)
 
-        tmp = (B >> 4)&not_occ
+        tmp = (b >> 4)&not_occ
         moves |= ((W_R3L&w)>>9)&tmp
         moves |= ((W_L3R&w)>>7)&tmp
 
-        tmp = ((W_L3R&B)>>3) & not_occ
+        tmp = ((W_L3R&b)>>3) & not_occ
         moves |= ((w&W_R3)>>7) &tmp
 
-        tmp = ((W_R3L&B)>>5) &not_occ
+        tmp = ((W_R3L&b)>>5) &not_occ
         moves |= ((w&W_L3)>>9) & tmp
 
         moves&= 0xFFFFFFFF
