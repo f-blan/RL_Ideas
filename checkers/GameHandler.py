@@ -6,6 +6,7 @@ from checkers.GUI.Commands import Commands as cmds
 from checkers.logic.bb_utils import print_bb, bb_to_np
 from checkers.CheckersConstants import CheckersConstants as ccs
 from checkers.logic.CheckersBoard import CheckersBoard
+from checkers.AI.SimpleAI import SimpleAI
 import numpy as np
 
 class GameHandler:
@@ -39,20 +40,27 @@ class GameHandler:
         self.write_q.put([cmds.GAME_SCREEN])
         n_moves = 0
 
+        board.W = 0x00000800
+        board.K = 0x00000800
+        board.B = 0x01000008
+
         movers, moves = board.generate_movers_and_moves()
         next_boards = board.generate_next()
         boards = []
         canon_b = CheckersBoard()
+
         while n_moves < 100 and len(movers)>0 and board.W != 0 and board.B != 0:
             canon_b = board.get_canonical_perspective(turn)
             self.write_q.put([cmds.ACQUIRE_HUMAN_INPUT, turn, canon_b, movers, moves])
+            
             cmd = self.read_q.get()
-
+            print("handler received", cmd)
             if cmd[0] == cmds.QUIT_GAME:
                 print("received quit")
                 return
             
             if cmd[0] == cmds.UNDO_MOVE and len(boards) > 0:
+                print("received undo")
                 board = boards.pop()
                 movers, moves = board.generate_movers_and_moves()
 
@@ -83,6 +91,7 @@ class GameHandler:
             print(moves)
             self.write_q.put([cmds.DRAW_GAME, -1, canon_b, np.array([]), np.array([])])
         
+        print("quit after game ended")
         cmd = self.read_q.get()
         
             
@@ -91,4 +100,79 @@ class GameHandler:
         pass
 
     def _player_vs_cpu(self):
-        pass
+        self.write_q.put([cmds.SELECTION_SCREEN])
+
+        cmd = self.read_q.get()[0]
+        if cmd == cmds.EXIT_APP:
+            return
+        player_color = cmd
+
+        turn = ccs.WHITE_TURN
+        board = MoverBoard(self.args.c_data_folder)
+
+        self.write_q.put([cmds.GAME_SCREEN])
+        n_moves = 0
+
+        movers, moves = board.generate_movers_and_moves()
+        next_boards = board.generate_next()
+        boards = []
+        canon_b = CheckersBoard()
+        next_state = MoverBoard()
+
+        ai = SimpleAI(ccs.WHITE_TURN if player_color == ccs.BLACK_TURN else ccs.BLACK_TURN)
+        
+        while n_moves < 100 and len(movers)>0 and board.W != 0 and board.B != 0:
+            canon_b = board.get_canonical_perspective(turn)
+
+            if turn == player_color:
+                print(n_moves, "handler sends available moves")
+                self.write_q.put([cmds.ACQUIRE_HUMAN_INPUT, turn, canon_b, movers, moves])
+            else:
+                print(n_moves, "handler sends AI decision")
+                ai.copy_state(board)
+                next_state = ai.get_next_state()
+                self.write_q.put([cmds.PROCESS_CPU_INPUT, turn, canon_b, next_state])
+            cmd = self.read_q.get()
+
+            if cmd[0] == cmds.QUIT_GAME:
+                print("received quit")
+                return
+            
+            if cmd[0] == cmds.UNDO_MOVE and len(boards) > 0:
+                board = boards.pop()
+                movers, moves = board.generate_movers_and_moves()
+
+                next_boards = board.generate_next()
+                n_moves-=1
+                turn = ccs.WHITE_TURN if turn == ccs.BLACK_TURN else ccs.BLACK_TURN
+                continue
+            
+            boards.append(MoverBoard(board=board))
+            
+            if player_color == turn:
+                print("processing human input")
+                chosen_board = next_boards[cmd[1]]
+                board.W, board.B, board.K = chosen_board.W, chosen_board.B, chosen_board.K
+            else:
+                print("processing cpu input")
+                board.W, board.B, board.K = next_state.W, next_state.B, next_state.K
+
+            board.reverse()
+            turn = ccs.WHITE_TURN if turn == ccs.BLACK_TURN else ccs.BLACK_TURN
+
+            movers, moves = board.generate_movers_and_moves()
+
+            next_boards = board.generate_next()
+
+            n_moves+=1
+            canon_b = board.get_canonical_perspective(turn)
+            
+        if board.B == 0 or board.W == 0:
+            self.write_q.put([cmds.WHITE_WINS if canon_b.B == 0 else cmds.BLACK_WINS, -1, canon_b, np.array([]), np.array([])])
+        else:
+            print(n_moves)
+            print(movers)
+            print(moves)
+            self.write_q.put([cmds.DRAW_GAME, -1, canon_b, np.array([]), np.array([])])
+        
+        cmd = self.read_q.get()

@@ -5,10 +5,11 @@ from queue import Queue
 from checkers.GUI.Commands import Commands as cmds
 
 class CheckersGUI(Thread):
-    def __init__(self, args: Namespace, read_q: Queue, write_q: Queue) -> None:
+    def __init__(self, args: Namespace, read_q: Queue, write_q: Queue, cpu_delay: float = 1.0) -> None:
         super().__init__()
         self.read_q = read_q
         self.write_q = write_q
+        self.cpu_delay = cpu_delay
 
     def run(self) -> None:
         data = [cmds.EXIT_APP]

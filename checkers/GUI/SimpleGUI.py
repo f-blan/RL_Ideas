@@ -11,16 +11,21 @@ import base64
 import os
 from checkers.GUI.Commands import Commands as cmds
 from checkers.CheckersConstants import CheckersConstants as ccs
+import time
+from typing import List
+import threading
 
 class SimpleGUI(CheckersGUI):
     def __init__(self, args: Namespace, read_q: Queue, write_q: Queue) -> None:
         super().__init__(args, read_q, write_q)
         self.str_to_cmd = {
             "Player vs Player": cmds.START_PVP_MODE, 
-            "Player vs CPU": cmds.START_CVC_MODE,
-            "CPU vs CPU": cmds.START_PVC_MODE,
+            "Player vs CPU": cmds.START_PVC_MODE,
+            "CPU vs CPU": cmds.START_CVC_MODE,
             "Exit": cmds.EXIT_APP,
-            sg.WIN_CLOSED: cmds.EXIT_APP
+            sg.WIN_CLOSED: cmds.EXIT_APP,
+            "White": ccs.WHITE_TURN,
+            "Black": ccs.BLACK_TURN
         }
         self.header_msg = {
             ccs.WHITE_TURN: "White's turn to move",
@@ -60,7 +65,13 @@ class SimpleGUI(CheckersGUI):
         return [self.str_to_cmd[event]]
 
     def selection_screen(self) -> str:
-        return super().selection_screen()
+        layout = [[sg.Text("Select the color for the human: ")], [sg.Button("White")], [sg.Button("Black")]]
+        window = sg.Window("BE_Checkers - Selection", layout, margins=[100, 50])
+        
+        event, values = window.read()
+        window.close()
+
+        return [self.str_to_cmd[event]]
     
     def board_piece(self, key: str, color: int, highlighted: bool, is_occupied: bool, piece_color: int = 0, piece_is_king: bool = False)-> sg.Button:
         img_name = "black" if color == 1 else "white"
@@ -68,43 +79,17 @@ class SimpleGUI(CheckersGUI):
         img_path = os.path.join(".", "checkers", "GUI", "imgs", img_name)
         return sg.Button(image_filename=img_path, size = 20, key=key, pad=(0,0))
 
-
-    def game_screen(self) -> str:
-        
-        header = [[sg.Button("<---", key="-EXIT-"), sg.Button("Undo", key="-UNDO-")], sg.Text("Game Start", key="-TURN-")]
-        board = [
-            [self.board_piece(str(j)+ "-"+str(i), (((j+1)%2)+i)%2, False, False) for i in range(1,9)] for j in range(1,9)
-        ]
-
-        layout = [
-            header, board
-        ]
-
-        window = sg.Window("BE_Checkers - Main Menu", layout, finalize=True)
-        
-        while True:
-            cmd, turn, b, movers, moves = self.read_q.get()
-
-            if cmd == cmds.WHITE_WINS or cmd == cmds.BLACK_WINS or cmd == cmds.DRAW_GAME:
-                window["-TURN-"].update(self.header_msg[cmd])
-                window["-UNDO-"].update(disabled = True)
-
-            else:
-                window["-TURN-"].update(self.header_msg[turn])
-            if turn == ccs.BLACK_TURN:
-                movers = np.array(list(map(BBManager().bb_reverse, movers)))
-                moves = np.array(list(map(BBManager().bb_reverse, moves)))
-            
-            response = [cmds.QUIT_GAME]
+    def _acquire_human_input(self, b: CheckersBoard, window: sg.Window, turn:int , movers: np.ndarray, moves: np.ndarray, np_b: np.ndarray) -> List[int]:
+            response = [cmds.NULL_COMMAND]
             move_selected = False
             piece_selected= False
             highlighted = []
             piece = -1
 
-            np_b = bb_to_np(b.W, b.B, b.K)
-            for j in range(0, 8):
-                for i in range(0, 8):
-                    window[str(j+1) + "-" + str(i+1)].update(image_filename=self.code_to_png[np_b[j,i]][self._coords_color(j,i, False)])
+            if turn == ccs.BLACK_TURN:
+                movers = np.array(list(map(BBManager().bb_reverse, movers)))
+                moves = np.array(list(map(BBManager().bb_reverse, moves)))
+            
            
             submit_response = True
             while move_selected == False:
@@ -112,6 +97,7 @@ class SimpleGUI(CheckersGUI):
                 event, values = window.read()
                 
                 if event == "-UNDO-":
+                    print("gui sending UNDO")
                     self.write_q.put([cmds.UNDO_MOVE])
                     submit_response = False
                     break
@@ -151,7 +137,71 @@ class SimpleGUI(CheckersGUI):
                         window[str(y+1) + "-" + str(x+1)].update(image_filename=self.code_to_png[np_b[y,x]][self._coords_color(y,x, True)])
             
             if submit_response:
-                print("gui sends", response)
+                print("gui will now send", response)
                 self.write_q.put(response)
+            
+            return response
+
+    def _process_CPU_input(self, window: sg.Window, next_state:np.ndarray) -> List[int]:
+        def timer_callback():
+            window["1-1"].click()
+            return 
+
+        timer = threading.Timer(self.cpu_delay, timer_callback)
+        timer.start()
+        event, val = window.read()
+        self.write_q.put([cmds.ACTION_PERFORMED])
+        if event == "-EXIT-":
+            return [cmds.QUIT_GAME]
+        if event == "-UNDO-":
+            return [cmds.UNDO_MOVE]
+
+        return [cmds.NULL_COMMAND]
+
+    def game_screen(self) -> str:
+        
+        header = [[sg.Button("<---", key="-EXIT-"), sg.Button("Undo", key="-UNDO-")], sg.Text("Game Start", key="-TURN-")]
+        board = [
+            [self.board_piece(str(j)+ "-"+str(i), (((j+1)%2)+i)%2, False, False) for i in range(1,9)] for j in range(1,9)
+        ]
+
+        layout = [
+            header, board
+        ]
+
+        window = sg.Window("BE_Checkers - Main Menu", layout, finalize=True)
+
+        while True:
+            data = self.read_q.get()
+            cmd = data[0]
+            turn = data[1]
+            b = data[2]
+            
+            np_b = bb_to_np(b.W, b.B, b.K)
+            for j in range(0, 8):
+                for i in range(0, 8):
+                    window[str(j+1) + "-" + str(i+1)].update(image_filename=self.code_to_png[np_b[j,i]][self._coords_color(j,i, False)])
+
+            if cmd == cmds.WHITE_WINS or cmd == cmds.BLACK_WINS or cmd == cmds.DRAW_GAME:
+                window["-TURN-"].update(self.header_msg[cmd])
+                window["-UNDO-"].update(disabled = True)
+                break
+            else:
+                window["-TURN-"].update(self.header_msg[turn])
+
+            if cmd == cmds.ACQUIRE_HUMAN_INPUT:
+                response = self._acquire_human_input(b, window, turn, data[3], data[4], np_b)
+            else:
+                response = self._process_CPU_input(window, data[3])
+            
+            if response[0] == cmds.QUIT_GAME:
+                    print("gui sending quit")
+                    return response
+        
+        while True:
+            event, _ = window.read()
+            if event == sg.WINDOW_CLOSED or event == "-EXIT-":
+                break 
+        window.close()
 
         
