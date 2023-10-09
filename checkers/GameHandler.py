@@ -51,11 +51,9 @@ class GameHandler:
             
             cmd = self.read_q.get()
             if cmd[0] == cmds.QUIT_GAME:
-                print("received quit")
                 return
             
             if cmd[0] == cmds.UNDO_MOVE and len(boards) > 0:
-                print("received undo")
                 board = boards.pop()
                 movers, moves = board.generate_movers_and_moves()
 
@@ -91,7 +89,50 @@ class GameHandler:
             
     
     def _cpu_vs_cpu(self):
-        pass
+        turn = ccs.WHITE_TURN
+        board = MoverBoard(self.args.c_data_folder)
+        self.write_q.put([cmds.GAME_SCREEN])
+        n_moves = 0
+
+        movers, moves = board.generate_movers_and_moves()
+        boards = []
+        canon_b = CheckersBoard()
+
+        ai_w = SimpleAI(ccs.WHITE_TURN)
+        ai_b = SimpleAI(ccs.BLACK_TURN)
+        
+
+        while n_moves < 100 and len(movers)>0 and board.W != 0 and board.B != 0:
+            canon_b = board.get_canonical_perspective(turn)
+            cur_ai = ai_w if turn == ccs.WHITE_TURN else ai_b
+            cur_ai.copy_state(board)
+            next_state = cur_ai.get_next_state()
+            self.write_q.put([cmds.PROCESS_CPU_INPUT, turn, canon_b, next_state])
+            cmd = self.read_q.get()
+            
+            if cmd[0] == cmds.QUIT_GAME:
+                return
+            
+            boards.append(MoverBoard(board=board))
+            board.W, board.B, board.K = next_state.W, next_state.B, next_state.K
+
+            board.reverse()
+            turn = ccs.WHITE_TURN if turn == ccs.BLACK_TURN else ccs.BLACK_TURN
+
+            movers, moves = board.generate_movers_and_moves()
+            n_moves+=1
+            canon_b = board.get_canonical_perspective(turn)
+            
+        if board.B == 0 or board.W == 0:
+            self.write_q.put([cmds.WHITE_WINS if canon_b.B == 0 else cmds.BLACK_WINS, -1, canon_b, np.array([]), np.array([])])
+        else:
+            print(n_moves)
+            print(movers)
+            print(moves)
+            self.write_q.put([cmds.DRAW_GAME, -1, canon_b, np.array([]), np.array([])])
+        
+        cmd = self.read_q.get()
+        
 
     def _player_vs_cpu(self):
         self.write_q.put([cmds.SELECTION_SCREEN])
@@ -127,7 +168,6 @@ class GameHandler:
             cmd = self.read_q.get()
 
             if cmd[0] == cmds.QUIT_GAME:
-                print("received quit")
                 return
             
             if cmd[0] == cmds.UNDO_MOVE and len(boards) > 0:

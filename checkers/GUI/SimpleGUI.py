@@ -141,18 +141,21 @@ class SimpleGUI(CheckersGUI):
 
     def _process_CPU_input(self, window: sg.Window, next_state:np.ndarray) -> List[int]:
         def timer_callback():
-            window["1-1"].click()
-            return 
-
+            if window.is_closed() == False:
+                window["1-1"].click() 
+        
         timer = threading.Timer(self.cpu_delay, timer_callback)
         timer.start()
+        
         event, val = window.read()
-        self.write_q.put([cmds.ACTION_PERFORMED])
+    
         if event == "-EXIT-":
+            window.close()
             return [cmds.QUIT_GAME]
         if event == "-UNDO-":
             return [cmds.UNDO_MOVE]
 
+        self.write_q.put([cmds.ACTION_PERFORMED])
         return [cmds.NULL_COMMAND]
 
     def game_screen(self) -> str:
