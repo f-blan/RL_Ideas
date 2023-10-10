@@ -26,12 +26,14 @@ class GameLogger():
     
     def save_game(self, boards: list[MoverBoard]):
         turn = ccs.WHITE_TURN
-        to_save = np.zeros((len(boards), 3))
+        struct = [[0,0,0] for i in range(0, len(boards))]
+        to_save = np.array(struct, dtype=np.longlong)
         i = 0
         for b in boards:
             canon_b = b.get_canonical_perspective(turn)
             to_save[i, 0], to_save[i, 1], to_save[i, 2] = canon_b.W, canon_b.B, canon_b.K 
             i+=1
+            turn = ccs.WHITE_TURN if turn == ccs.BLACK_TURN else ccs.BLACK_TURN
         print("logged at", self.path)
         np.save(self.path, to_save)
 

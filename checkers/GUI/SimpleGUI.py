@@ -87,6 +87,8 @@ class SimpleGUI(CheckersGUI):
         while True:
             event, values = window.read()
             if event == "Exit" or event == sg.WIN_CLOSED:
+                response[0] = cmds.QUIT_GAME
+                response.append("")
                 break
             if event == "-FOLDER-":
                 folder = values["-FOLDER-"]
@@ -113,6 +115,44 @@ class SimpleGUI(CheckersGUI):
                 
         window.close()
         return response
+
+    def view_screen(self) -> List[Any]:
+        header = [[sg.Button("Exit", key="-EXIT-")], [sg.Button("<--", key="-BACK-"),sg.Button("-->", key="-NEXT-")], [sg.Text("Move 1, White's turn", key="-HEAD-")]]
+        board = [
+            [self.board_piece(str(j)+ "-"+str(i), (((j+1)%2)+i)%2, False, False) for i in range(1,9)] for j in range(1,9)
+        ]
+
+        layout = [
+            header, board
+        ]
+
+        window = sg.Window("BE_Checkers - Main Menu", layout, finalize=True)
+        cmd, boards = self.read_q.get()
+        cur_i = 0
+
+        while True:
+            b = boards[cur_i]
+            np_b = bb_to_np(int(b[0]), int(b[1]), int(b[2]))
+            for j in range(0, 8):
+                for i in range(0, 8):
+                    window[str(j+1) + "-" + str(i+1)].update(image_filename=self.code_to_png[np_b[j,i]][self._coords_color(j,i, False)])
+
+            if cur_i % 2 == 0:
+                window["-HEAD-"].update("Move "+ str(cur_i+1) + ", White's turn")
+            else:
+                window["-HEAD-"].update("Move "+ str(cur_i+1) + ", Black's turn")
+
+            event, values = window.read()
+            if event == "-EXIT-" or event == sg.WIN_CLOSED:
+                break
+            
+            if event == "-BACK-":
+                cur_i = max(0, cur_i-1)
+            if event == "-NEXT-":
+                cur_i = min(len(boards)-1, cur_i+1)
+        window.close()
+        return [cmds.ACTION_PERFORMED]
+
 
     def selection_screen(self) -> List[Any]:
         layout = [[sg.Text("Select the color for the human: ")], [sg.Button("White")], [sg.Button("Black")]]
@@ -251,6 +291,7 @@ class SimpleGUI(CheckersGUI):
             event, _ = window.read()
             if event == sg.WINDOW_CLOSED or event == "-EXIT-":
                 break 
+        
         window.close()
 
         

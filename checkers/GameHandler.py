@@ -43,9 +43,16 @@ class GameHandler:
 
     def _view_game(self):
         self.write_q.put([cmds.BROWSE_SCREEN])
-        filename = self.read_q.get()
-        print("got ", filename)
+        cmd, filename = self.read_q.get()
+        if cmd == cmds.QUIT_GAME:
+            return
         
+        boards = np.load(filename)
+
+        self.write_q.put([cmds.VIEW_SCREEN])
+        self.write_q.put([cmds.VIEW_SCREEN, boards])
+
+        self.read_q.get()
 
     def _player_vs_player(self, logger: GameLogger = None):
         turn = ccs.WHITE_TURN

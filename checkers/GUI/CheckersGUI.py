@@ -26,6 +26,8 @@ class CheckersGUI(Thread):
                     data = self.game_screen()
                 case cmds.BROWSE_SCREEN:
                     data = self.browse_screen()
+                case cmds.VIEW_SCREEN:
+                    data = self.view_screen()
                 case cmds.GUI_TERMINATE:
                     break
             print("gui sends", data)
@@ -41,4 +43,7 @@ class CheckersGUI(Thread):
         pass
 
     def browse_screen(self) -> List[Any]:
+        pass
+
+    def view_screen(self) -> List[Any]:
         pass

@@ -27,7 +27,9 @@ class Commands(Enum):
     GAME_SCREEN =           0x00000008
     SELECTION_SCREEN =      0x00000010
     BROWSE_SCREEN =         0x00000600
+    VIEW_SCREEN =           0x00000700
     GUI_TERMINATE =         0x00000020
+
 
     ACQUIRE_HUMAN_INPUT =   0x00000000
     PROCESS_CPU_INPUT =     0x00000001
