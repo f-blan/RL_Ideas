@@ -11,6 +11,7 @@ class Commands(Enum):
     START_PVP_MODE =        0x00000003
     START_CVC_MODE =        0x00000004
     START_PVC_MODE =        0x00000005
+    START_VIEW_MODE =       0x00000500
 
     EXIT_APP =              0x00000006
     PROCESS_ACQUIRED_MOVE = 0x00000030
@@ -25,6 +26,7 @@ class Commands(Enum):
     MENU_SCREEN =           0x00000007
     GAME_SCREEN =           0x00000008
     SELECTION_SCREEN =      0x00000010
+    BROWSE_SCREEN =         0x00000600
     GUI_TERMINATE =         0x00000020
 
     ACQUIRE_HUMAN_INPUT =   0x00000000

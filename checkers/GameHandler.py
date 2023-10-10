@@ -7,6 +7,7 @@ from checkers.logic.bb_utils import print_bb, bb_to_np
 from checkers.CheckersConstants import CheckersConstants as ccs
 from checkers.logic.CheckersBoard import CheckersBoard
 from checkers.AI.SimpleAI import SimpleAI
+from checkers.logging import GameLogger
 import numpy as np
 
 class GameHandler:
@@ -14,6 +15,7 @@ class GameHandler:
         self.args = args
         self.read_q = Queue()
         self.write_q = Queue()
+        self.log_folder = args.log_folder
         self.gui = SimpleGUI(args, self.write_q, self.read_q) if args.c_GUI_type == "simple" else TerminalGUI(args, self.write_q, self.read_q) 
 
     def run_game(self) -> None:
@@ -21,20 +23,31 @@ class GameHandler:
         while True:
             print("handler sends menu screen")
             self.write_q.put([cmds.MENU_SCREEN])
-            game_mode = self.read_q.get()
-            print("handler received", game_mode)
-            match game_mode[0]:
+            request = self.read_q.get()
+            logger = None
+            if len(request) > 1:
+                logger = GameLogger(self.log_folder, request[1])
+            print("handler received", request)
+            match request[0]:
                 case cmds.START_PVP_MODE:
-                    self._player_vs_player()
+                    self._player_vs_player(logger)
                 case cmds.START_CVC_MODE:
-                    self._cpu_vs_cpu()
+                    self._cpu_vs_cpu(logger)
                 case cmds.START_PVC_MODE:
-                    self._player_vs_cpu()
+                    self._player_vs_cpu(logger)
+                case cmds.START_VIEW_MODE:
+                    self._view_game()
                 case cmds.EXIT_APP:
                     break
         self.write_q.put([cmds.GUI_TERMINATE])
 
-    def _player_vs_player(self):
+    def _view_game(self):
+        self.write_q.put([cmds.BROWSE_SCREEN])
+        filename = self.read_q.get()
+        print("got ", filename)
+        
+
+    def _player_vs_player(self, logger: GameLogger = None):
         turn = ccs.WHITE_TURN
         board = MoverBoard(self.args.c_data_folder)
         self.write_q.put([cmds.GAME_SCREEN])
@@ -83,12 +96,13 @@ class GameHandler:
             print(movers)
             print(moves)
             self.write_q.put([cmds.DRAW_GAME, -1, canon_b, np.array([]), np.array([])])
-        
+        if logger is not None:
+            logger.save_game(boards)
         cmd = self.read_q.get()
         
             
     
-    def _cpu_vs_cpu(self):
+    def _cpu_vs_cpu(self, logger: GameLogger = None):
         turn = ccs.WHITE_TURN
         board = MoverBoard(self.args.c_data_folder)
         self.write_q.put([cmds.GAME_SCREEN])
@@ -131,10 +145,13 @@ class GameHandler:
             print(moves)
             self.write_q.put([cmds.DRAW_GAME, -1, canon_b, np.array([]), np.array([])])
         
+        if logger is not None:
+            logger.save_game(boards)
+
         cmd = self.read_q.get()
         
 
-    def _player_vs_cpu(self):
+    def _player_vs_cpu(self, logger: GameLogger):
         self.write_q.put([cmds.SELECTION_SCREEN])
 
         cmd = self.read_q.get()[0]
@@ -205,4 +222,7 @@ class GameHandler:
             print(moves)
             self.write_q.put([cmds.DRAW_GAME, -1, canon_b, np.array([]), np.array([])])
         
+        if logger is not None:
+            logger.save_game(boards)
+
         cmd = self.read_q.get()

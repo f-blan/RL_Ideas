@@ -12,7 +12,7 @@ import os
 from checkers.GUI.Commands import Commands as cmds
 from checkers.CheckersConstants import CheckersConstants as ccs
 import time
-from typing import List
+from typing import List, Any
 import threading
 
 class SimpleGUI(CheckersGUI):
@@ -22,6 +22,7 @@ class SimpleGUI(CheckersGUI):
             "Player vs Player": cmds.START_PVP_MODE, 
             "Player vs CPU": cmds.START_PVC_MODE,
             "CPU vs CPU": cmds.START_CVC_MODE,
+            "View logged game": cmds.START_VIEW_MODE,
             "Exit": cmds.EXIT_APP,
             sg.WIN_CLOSED: cmds.EXIT_APP,
             "White": ccs.WHITE_TURN,
@@ -55,16 +56,65 @@ class SimpleGUI(CheckersGUI):
         p_i = np.argmax(movers == mover_bb)
         return p_i+np.argmax(moves[p_i:] == move_bb)
 
-    def menu_screen(self) -> str:
-        layout = [[sg.Text("Welcome!")], [sg.Text("Select the Game Mode:")], [sg.Button("Player vs Player")], [sg.Button("Player vs CPU")], [sg.Button("CPU vs CPU")], [sg.Button("Exit")]]
+    def menu_screen(self) -> List[Any]:
+        layout = [[sg.Text("Welcome!"), sg.Input("checkers_logs", key="-LOG-"), sg.Button("ok", key="-OKLOG-")], 
+                  [sg.Text("Select the Game Mode:")], [sg.Button("Player vs Player")], 
+                  [sg.Button("Player vs CPU")], 
+                  [sg.Button("CPU vs CPU")],
+                  [sg.Button("View logged game")], 
+                  [sg.Button("Exit")]]
         window = sg.Window("BE_Checkers - Main Menu", layout, margins=[100, 50])
-        
-        event, values = window.read()
+        response = [self.str_to_cmd["Player vs Player"]]
+        while True:
+            event, values = window.read()
+            if event == "-OKLOG-":
+                    if len(response) > 1:
+                        response.pop()
+                    response.append(window["-LOG-"].get())
+            else:
+                response[0] = self.str_to_cmd[event]
+                break
         window.close()
+        return response
 
-        return [self.str_to_cmd[event]]
+    def browse_screen(self) -> List[Any]:
+        layout = [[sg.In(size=(25, 1), enable_events=True, key="-FOLDER-"),sg.FolderBrowse(initial_folder=".")], 
+                  [sg.Listbox(values=[], enable_events=True, size=(40, 20), key="-FILE LIST-")],
+                  [sg.Button("OK", key="-OK-")]]
+        window = sg.Window("BE_Checkers - Main Menu", layout, margins=[100, 50])
+        response = [cmds.ACTION_PERFORMED]
+        filename = ""
+        while True:
+            event, values = window.read()
+            if event == "Exit" or event == sg.WIN_CLOSED:
+                break
+            if event == "-FOLDER-":
+                folder = values["-FOLDER-"]
+                print("checking folder ", folder)
+                try:
+                    # Get list of files in folder
+                    file_list = os.listdir(folder)
+                    print("good!", file_list)
+                except:
+                    print("bad!")
+                    file_list = []
 
-    def selection_screen(self) -> str:
+                fnames = [f for f in file_list if os.path.isfile(os.path.join(folder, f)) and f.lower().endswith((".npy"))]
+                window["-FILE LIST-"].update(fnames)
+            elif event == "-FILE LIST-":  # A file was chosen from the listbox
+                try:
+                    filename = os.path.join(values["-FOLDER-"], values["-FILE LIST-"][0])
+                except:
+                    pass
+            if event == "-OK-":
+                if filename != "":
+                    response.append(filename)
+                    break
+                
+        window.close()
+        return response
+
+    def selection_screen(self) -> List[Any]:
         layout = [[sg.Text("Select the color for the human: ")], [sg.Button("White")], [sg.Button("Black")]]
         window = sg.Window("BE_Checkers - Selection", layout, margins=[100, 50])
         
