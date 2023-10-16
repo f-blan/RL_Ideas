@@ -3,6 +3,7 @@ from typing import Tuple, Dict
 import numpy as np
 import os
 import json, codecs
+from checkers.CheckersConstants import CheckersConstants as ccs
 
 class BBManager:
     def __new__(cls):
@@ -512,6 +513,14 @@ class BBManager:
         self.dict_bm = ret_bm
         self.dict_bj = ret_bj
         return ret_wm, ret_bm, ret_wj, ret_bj
+
+    def get_n_moves_possible(self, W: int, B: int, K: int, turn: int):
+        if turn == ccs.WHITE_TURN:
+            movers, moves, k_movers, k_moves = self.white_moves(W, B, K)
+        else:
+            movers, moves, k_movers, k_moves = self.black_moves(W, B, K)
+
+        return (moves | moves).bit_count()
 
     def bb_scores(self, W: int, B: int, K: int)-> Tuple[int, int, int, int, int, int, int]:
         w_movers, w_moves, wk_movers, wk_moves = self.white_moves(W, B, K)

@@ -2,6 +2,7 @@ import numpy as np
 from checkers.logic.consts import *
 from checkers.logic.bb_utils import *
 from checkers.logic.BBManager import BBManager
+from checkers.CheckersConstants import CheckersConstants as ccs
 
 class CheckersBoard:
 

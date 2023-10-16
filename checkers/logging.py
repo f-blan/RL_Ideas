@@ -11,8 +11,8 @@ from checkers.CheckersConstants import CheckersConstants as ccs
 
 
 class GameLogger():
-    def __init__(self, log_root: str, folder_path: str, game_name: str = None):
-        self.root = os.path.join(log_root, folder_path)
+    def __init__(self, log_root: str, folder_name: str, game_name: str = None):
+        self.root = os.path.join(log_root, folder_name)
         if os.path.exists(self.root) == False:
             os.mkdir(self.root)
         if game_name == None:

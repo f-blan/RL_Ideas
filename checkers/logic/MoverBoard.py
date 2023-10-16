@@ -19,6 +19,10 @@ class MoverBoard(CheckersBoard):
         self.np_board[0:3, :] = 1
         self.np_board[5:8, :] = -1
         """
+
+    def can_move(self) -> bool:
+        return self.bb_m.get_n_moves_possible(self.W, self.B, self.K, ccs.WHITE_TURN) > 0
+    
     def reverse(self) -> None:
         tmp = self.W
         
