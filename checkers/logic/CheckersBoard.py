@@ -39,7 +39,7 @@ class CheckersBoard:
         score = 4*capped + potential + men + 3*kings + capturables + 2*mid + 100*won
 
         if score < 0:
-            return np.array([-1, capped, potential, men, kings,  mid, won])
+            return np.array([0, capped, potential, men, kings,  mid, won])
         else:
             return np.array([1, capped, potential, men, kings,  mid, won])
 

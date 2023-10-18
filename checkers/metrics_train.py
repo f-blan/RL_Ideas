@@ -8,24 +8,19 @@ from tqdm import tqdm
 import os
 import matplotlib.pyplot as plot
 from checkers.logging import GameLogger
+from checkers.AI.MetricsModel import MetricsModel
 
 def make_metrics_model(args: Namespace) -> None:
     # Metrics model, which only looks at heuristic scoring metrics used for labeling
-    metrics_model = tf.keras.Sequential()
-    metrics_model.add(tf.keras.layers.Dense(32, activation='relu', input_dim=6)) 
-    metrics_model.add(tf.keras.layers.Dense(16, activation='relu',  kernel_regularizer=tf.keras.regularizers.l2(0.1)))
-
-    logger = GameLogger(args.log_folder, "metrics_logs")
-
-    # output is passed to relu() because labels are binary
-    metrics_model.add(tf.keras.layers.Dense(1, activation='relu',  kernel_regularizer=tf.keras.regularizers.l2(0.1)))
+    metrics_model = MetricsModel()
     metrics_model.compile(optimizer='nadam', loss='binary_crossentropy', metrics=["acc"])
 
+    logger = GameLogger(args.log_folder, "metrics_logs")
     start_board = MoverBoard(args.c_data_folder)
     boards_list = start_board.generate_next()
     turns_list = [ccs.WHITE_TURN for b in boards_list]
     branching_position = 0
-    nmbr_generated_game = 100000
+    nmbr_generated_game = 10000
     cur_turn = ccs.WHITE_TURN
 	
     print("generating games")
@@ -65,7 +60,9 @@ def make_metrics_model(args: Namespace) -> None:
     cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=model_path,
                                                  save_weights_only=True,
                                                  verbose=1)
-    history = metrics_model.fit(metrics , winning, epochs=32, batch_size=64, verbose=1, callbacks=[cp_callback])
+    history = metrics_model.fit(metrics , winning, epochs=12, batch_size=64, verbose=1, callbacks=[cp_callback])
+    preds = metrics_model.predict(metrics)
+
     # History for accuracy
     plot.plot(history.history['acc'])
     #plot.plot(history.history['val_acc'])
