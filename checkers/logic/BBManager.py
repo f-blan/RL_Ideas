@@ -533,8 +533,9 @@ class BBManager:
         potential_score = (w_moves | wk_moves).bit_count() - (b_moves | bk_moves).bit_count()
         men_score = (W^(W&K)).bit_count()-(B^(B&K)).bit_count()
         kings_score = (W&K).bit_count()-(B&K).bit_count()
-        mid_score = (W&0x000FF000).bit_count()-(B&0x000FF000)
+        mid_score = (W&0x000FF000).bit_count()-(B&0x000FF000).bit_count()
         capturables_score = (w_jumpers | wk_jumpers).bit_count()-(b_jumpers | bk_jumpers).bit_count()
+
 
         won = 0
         if W == 0:

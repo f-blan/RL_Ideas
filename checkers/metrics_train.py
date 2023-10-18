@@ -25,7 +25,7 @@ def make_metrics_model(args: Namespace) -> None:
     boards_list = start_board.generate_next()
     turns_list = [ccs.WHITE_TURN for b in boards_list]
     branching_position = 0
-    nmbr_generated_game = 10000
+    nmbr_generated_game = 100000
     cur_turn = ccs.WHITE_TURN
 	
     print("generating games")
@@ -58,14 +58,14 @@ def make_metrics_model(args: Namespace) -> None:
         metrics = np.vstack((metrics, temp[1:]))
         winning = np.vstack((winning, temp[0]))
     
-    logger.save_game(boards_list)
+    log_list = list(map(lambda x: MoverBoard(board=x), boards_list))
+    logger.save_game(log_list, turns_list)
     # fit the metrics model
     model_path = os.path.join(args.c_model_folder, "metrics_model.ckpt")
     cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=model_path,
                                                  save_weights_only=True,
                                                  verbose=1)
-    history = metrics_model.fit(metrics , winning, epochs=4, batch_size=64, verbose=1, callbacks=[cp_callback])
-    print(history.history)
+    history = metrics_model.fit(metrics , winning, epochs=32, batch_size=64, verbose=1, callbacks=[cp_callback])
     # History for accuracy
     plot.plot(history.history['acc'])
     #plot.plot(history.history['val_acc'])
@@ -83,3 +83,4 @@ def make_metrics_model(args: Namespace) -> None:
     plot.xlabel('epoch')
     plot.legend(['train', 'validation'], loc='upper left')
     plot.show()
+

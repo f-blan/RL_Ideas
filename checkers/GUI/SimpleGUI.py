@@ -18,6 +18,7 @@ import threading
 class SimpleGUI(CheckersGUI):
     def __init__(self, args: Namespace, read_q: Queue, write_q: Queue) -> None:
         super().__init__(args, read_q, write_q)
+        self.data_folder = args.c_data_folder
         self.str_to_cmd = {
             "Player vs Player": cmds.START_PVP_MODE, 
             "Player vs CPU": cmds.START_PVC_MODE,
@@ -117,7 +118,10 @@ class SimpleGUI(CheckersGUI):
         return response
 
     def view_screen(self) -> List[Any]:
-        header = [[sg.Button("Exit", key="-EXIT-")], [sg.Button("<--", key="-BACK-"),sg.Button("-->", key="-NEXT-")], [sg.Text("Move 1, White's turn", key="-HEAD-")]]
+        header = [[sg.Button("Exit", key="-EXIT-")], 
+                  [sg.Button("<--", key="-BACK-"),sg.Button("-->", key="-NEXT-")],
+                  [sg.Text("State: ", key= "-STATE-")], 
+                  [sg.Text("Move 1, White's turn", key="-HEAD-")]]
         board = [
             [self.board_piece(str(j)+ "-"+str(i), (((j+1)%2)+i)%2, False, False) for i in range(1,9)] for j in range(1,9)
         ]
@@ -132,6 +136,9 @@ class SimpleGUI(CheckersGUI):
 
         while True:
             b = boards[cur_i]
+            c_b = CheckersBoard(self.data_folder)
+            c_b.W, c_b.B, c_b.K = b
+            window["-STATE-"].update("State: " + str(c_b.get_metrics()))
             np_b = bb_to_np(int(b[0]), int(b[1]), int(b[2]))
             for j in range(0, 8):
                 for i in range(0, 8):
@@ -250,7 +257,7 @@ class SimpleGUI(CheckersGUI):
 
     def game_screen(self) -> str:
         
-        header = [[sg.Button("<---", key="-EXIT-"), sg.Button("Undo", key="-UNDO-")], sg.Text("Game Start", key="-TURN-")]
+        header = [[sg.Button("<---", key="-EXIT-"), sg.Button("Undo", key="-UNDO-")], sg.Text("Game Start", key="-TURN-"), [sg.Text("State: ", key= "-STATE-")]]
         board = [
             [self.board_piece(str(j)+ "-"+str(i), (((j+1)%2)+i)%2, False, False) for i in range(1,9)] for j in range(1,9)
         ]
@@ -268,6 +275,7 @@ class SimpleGUI(CheckersGUI):
             b = data[2]
 
             np_b = bb_to_np(b.W, b.B, b.K)
+            window["-STATE-"].update("State: " + str(b.get_metrics()))
             for j in range(0, 8):
                 for i in range(0, 8):
                     window[str(j+1) + "-" + str(i+1)].update(image_filename=self.code_to_png[np_b[j,i]][self._coords_color(j,i, False)])

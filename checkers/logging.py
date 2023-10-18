@@ -24,13 +24,16 @@ class GameLogger():
             os.remove(game_path)
         self.path = game_path
     
-    def save_game(self, boards: list[MoverBoard]):
+    def save_game(self, boards: list[MoverBoard], turns_list: list[int] = None):
         turn = ccs.WHITE_TURN
         struct = [[0,0,0] for i in range(0, len(boards))]
         to_save = np.array(struct, dtype=np.longlong)
         i = 0
-        for b in boards:
-            canon_b = b.get_canonical_perspective(turn)
+        for i in range(0, len(boards)):
+            if turns_list is None:
+                canon_b = boards[i].get_canonical_perspective(turn)
+            else:
+                canon_b = boards[i].get_canonical_perspective(turns_list[i])
             to_save[i, 0], to_save[i, 1], to_save[i, 2] = canon_b.W, canon_b.B, canon_b.K 
             i+=1
             turn = ccs.WHITE_TURN if turn == ccs.BLACK_TURN else ccs.BLACK_TURN
