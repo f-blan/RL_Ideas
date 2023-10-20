@@ -2,7 +2,9 @@ from argparse import Namespace
 from checkers.GUI.CheckersGUI import CheckersGUI
 from checkers.logic.BBManager import BBManager
 from checkers.logic.CheckersBoard import CheckersBoard
+from checkers.logic.MoverBoard import MoverBoard
 from checkers.logic.bb_utils import bb_to_np, coords_to_set_bit, set_bit_to_coords, print_bb
+from checkers.AI.DeepQAI import DeepQAI
 from argparse import Namespace
 import PySimpleGUI as sg
 from queue import Queue
@@ -14,11 +16,16 @@ from checkers.CheckersConstants import CheckersConstants as ccs
 import time
 from typing import List, Any
 import threading
+import os
 
 class SimpleGUI(CheckersGUI):
     def __init__(self, args: Namespace, read_q: Queue, write_q: Queue) -> None:
         super().__init__(args, read_q, write_q)
         self.data_folder = args.c_data_folder
+
+        if self.show_engine_eval:
+            self.engine = DeepQAI(ccs.WHITE_TURN, args.c_model_folder)
+
         self.str_to_cmd = {
             "Player vs Player": cmds.START_PVP_MODE, 
             "Player vs CPU": cmds.START_PVC_MODE,
@@ -93,11 +100,9 @@ class SimpleGUI(CheckersGUI):
                 break
             if event == "-FOLDER-":
                 folder = values["-FOLDER-"]
-                print("checking folder ", folder)
                 try:
                     # Get list of files in folder
                     file_list = os.listdir(folder)
-                    print("good!", file_list)
                 except:
                     print("bad!")
                     file_list = []
@@ -136,9 +141,15 @@ class SimpleGUI(CheckersGUI):
 
         while True:
             b = boards[cur_i]
-            c_b = CheckersBoard(self.data_folder)
+            c_b = MoverBoard(self.data_folder)
             c_b.W, c_b.B, c_b.K = b
-            window["-STATE-"].update("State: " + str(c_b.get_metrics()))
+
+            state_str = "State: " + str(c_b.get_metrics())
+            if self.show_engine_eval:
+                self.engine.copy_state(c_b)
+                state_str += str(self.engine.evaluate_state())
+            window["-STATE-"].update(state_str)
+
             np_b = bb_to_np(int(b[0]), int(b[1]), int(b[2]))
             for j in range(0, 8):
                 for i in range(0, 8):
@@ -274,8 +285,13 @@ class SimpleGUI(CheckersGUI):
             turn = data[1]
             b = data[2]
 
+            state_str = "State: " + str(b.get_metrics())
+            if self.show_engine_eval:
+                self.engine.copy_state(b)
+                state_str += str(self.engine.evaluate_state())
+            window["-STATE-"].update(state_str)
+            
             np_b = bb_to_np(b.W, b.B, b.K)
-            window["-STATE-"].update("State: " + str(b.get_metrics()))
             for j in range(0, 8):
                 for i in range(0, 8):
                     window[str(j+1) + "-" + str(i+1)].update(image_filename=self.code_to_png[np_b[j,i]][self._coords_color(j,i, False)])

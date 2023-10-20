@@ -45,4 +45,3 @@ class CheckersBoard:
 
     def as_np(self) -> np.ndarray:
         pass
-

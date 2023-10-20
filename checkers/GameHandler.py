@@ -7,6 +7,7 @@ from checkers.logic.bb_utils import print_bb, bb_to_np
 from checkers.CheckersConstants import CheckersConstants as ccs
 from checkers.logic.CheckersBoard import CheckersBoard
 from checkers.AI.SimpleAI import SimpleAI
+from checkers.AI.DeepQAI import DeepQAI
 from checkers.logging import GameLogger
 import numpy as np
 
@@ -16,7 +17,12 @@ class GameHandler:
         self.read_q = Queue()
         self.write_q = Queue()
         self.log_folder = args.log_folder
-        self.gui = SimpleGUI(args, self.write_q, self.read_q) if args.c_GUI_type == "simple" else TerminalGUI(args, self.write_q, self.read_q) 
+        self.helper_board = MoverBoard(args.c_data_folder)
+        self.gui = SimpleGUI(args, self.write_q, self.read_q) if args.c_GUI_type == "simple" else TerminalGUI(args, self.write_q, self.read_q)
+
+        self.model_folder = args.c_model_folder
+        self.ai_class = DeepQAI if args.c_AI_type == "rl" else SimpleAI
+        
 
     def run_game(self) -> None:
         self.gui.start()
@@ -119,8 +125,8 @@ class GameHandler:
         boards = []
         canon_b = CheckersBoard()
 
-        ai_w = SimpleAI(ccs.WHITE_TURN)
-        ai_b = SimpleAI(ccs.BLACK_TURN)
+        ai_w = self.ai_class(ccs.WHITE_TURN, self.model_folder)
+        ai_b = self.ai_class(ccs.BLACK_TURN, self.model_folder)
         
 
         while n_moves < 100 and len(movers)>0 and board.W != 0 and board.B != 0:
@@ -178,7 +184,7 @@ class GameHandler:
         canon_b = CheckersBoard()
         next_state = MoverBoard()
 
-        ai = SimpleAI(ccs.WHITE_TURN if player_color == ccs.BLACK_TURN else ccs.BLACK_TURN)
+        ai = self.ai_class(ccs.WHITE_TURN if player_color == ccs.BLACK_TURN else ccs.BLACK_TURN, self.model_folder)
         
         while n_moves < 100 and len(movers)>0 and board.W != 0 and board.B != 0:
             canon_b = board.get_canonical_perspective(turn)

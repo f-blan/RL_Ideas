@@ -2,7 +2,7 @@ from checkers.logic.MoverBoard import MoverBoard
 from checkers.logic.CheckersBoard import CheckersBoard
 
 class CheckersAI:
-    def __init__(self, color: int):
+    def __init__(self, color: int, model_path: str = None):
         self.color = color
         self.board = MoverBoard()
     

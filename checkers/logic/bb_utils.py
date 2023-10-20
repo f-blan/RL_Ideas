@@ -182,3 +182,31 @@ def bb_to_np(W:int, B:int, K:int) -> np.ndarray:
         
         return ret
 
+def bb_to_np_compact(W:int, B:int, K:int) -> np.ndarray:
+        ret = np.zeros((8, 4), dtype=int)
+        wk = W & K
+        bk = B & K 
+
+
+        pos = 0x80000000
+        i=0
+        j=0
+        while pos != 0:
+            if j >= 4:
+                j= 0
+                i+=1
+            if W & pos != 0:
+                ret[i,j] = 2 if wk & pos else 1
+            elif B & pos != 0:
+                ret[i,j] = -2 if bk & pos else -1
+            j+=1
+            pos= pos >> 1
+        
+        return ret
+
+def revert_and_transform(arg):
+    board = arg[0]
+    turn = arg[1]
+    canon_b = MoverBoard(board = board).get_canonical_perspective(turn)
+    np_mat = bb_to_np_compact(canon_b.W, canon_b.B, canon_b.K)
+    return np_mat.flatten()

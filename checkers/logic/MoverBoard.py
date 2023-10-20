@@ -4,6 +4,8 @@ import numpy as np
 import itertools as it
 from checkers.logic.bb_utils import print_bb
 from checkers.CheckersConstants import CheckersConstants as ccs
+from tqdm import tqdm
+
 
 class MoverBoard(CheckersBoard):
     """
@@ -88,7 +90,7 @@ class MoverBoard(CheckersBoard):
                     iterator_j = self.dict_wj[n][0] if n&k_jumpers ==0 else it.chain(self.dict_wj[n][0], self.dict_bj[n][0])
                     iterator_m = self.dict_wj[n][1] if n&k_jumpers ==0 else it.chain(self.dict_wj[n][1], self.dict_bj[n][1])
                     for j,m in zip(iterator_j, iterator_m):
-                        if j&jumps!=0 and (self.B ^ self.K) & ~m != 0:
+                        if j&jumps!=0 and (self.B ^ self.K) & ~m != 0 and n&self.K == 0:
                             to_add = CheckersBoard()
                             to_add.W, to_add.B, to_add.K = self.bb_m.apply_jump(self.W, n, j, m, self.B, self.K, False)
                             ret.append(to_add)
@@ -112,6 +114,42 @@ class MoverBoard(CheckersBoard):
 
         return ret
 
+    def generate_games(self, nmbr_generated_game: int) -> Tuple[list[CheckersBoard], list[int], np.ndarray, np.ndarray]:
+        boards_list = self.generate_next()
+        turns_list = [ccs.WHITE_TURN for b in boards_list]
+        branching_position = 0
+        nmbr_generated_game = 10000
+        cur_turn = ccs.WHITE_TURN
+	
+        print("generating games")
+        pbar = tqdm(total=nmbr_generated_game)
+        while len(boards_list) < nmbr_generated_game:
+            temp = len(boards_list)-1
+            for i in range(branching_position, len(boards_list)):
+                cur_board = MoverBoard(board=boards_list[i])
+                cur_board.reverse()
+                if cur_board.can_move():
+                    next_gen = cur_board.generate_next()
+                    next_turns = [cur_turn for b in next_gen]
+                    boards_list += next_gen
+                    turns_list+=next_turns
+                    pbar.update(len(next_turns))
+            branching_position = temp
+            cur_turn = ccs.WHITE_TURN if cur_turn == ccs.BLACK_TURN else ccs.BLACK_TURN
 
+        pbar.close()
+        # calculate/save heuristic metrics for each game state
+        metrics	= np.zeros((0, 6))
+        winning = np.zeros((0, 1))
 
+        print("processing games")
+        for board, turn in tqdm(zip(boards_list[:nmbr_generated_game], turns_list[:nmbr_generated_game])):
+            canon_b = MoverBoard(board = board).get_canonical_perspective(turn)
+            temp = canon_b.get_metrics()
+
+            metrics = np.vstack((metrics, temp[1:]))
+            winning = np.vstack((winning, temp[0]))
+
+        
+        return boards_list[:nmbr_generated_game], turns_list[:nmbr_generated_game], metrics, winning
 
