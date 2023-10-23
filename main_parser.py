@@ -26,7 +26,7 @@ def parse_main_arguments(args_list: List[str]) -> Namespace:
         os.mkdir(args.log_folder)
         
     if os.path.exists(args.c_model_folder) == False:
-        os.mkdir(args.c_model_fold)
+        os.mkdir(args.c_model_folder)
 
     return args
     
