@@ -118,7 +118,6 @@ class MoverBoard(CheckersBoard):
         boards_list = self.generate_next()
         turns_list = [ccs.WHITE_TURN for b in boards_list]
         branching_position = 0
-        nmbr_generated_game = 10000
         cur_turn = ccs.WHITE_TURN
 	
         print("generating games")

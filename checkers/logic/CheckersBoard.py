@@ -33,6 +33,9 @@ class CheckersBoard:
     def _black_jumps(self) -> Tuple[int, int, int, int]:
         return self.bb_m.black_jumps(self.W, self.B, self.K)
 
+    def is_game_over(self) -> bool:
+        return self.B == 0 or self.W == 0
+
     def get_metrics(self)-> np.ndarray:
 
         capped, potential, men, kings, mid, capturables, won = self.bb_m.bb_scores(self.W, self.B, self.K)
