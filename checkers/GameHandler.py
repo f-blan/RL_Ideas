@@ -8,7 +8,7 @@ from checkers.CheckersConstants import CheckersConstants as ccs
 from checkers.logic.CheckersBoard import CheckersBoard
 from checkers.AI.SimpleAI import SimpleAI
 from checkers.AI.DeepQAI import DeepQAI
-from checkers.logging import GameLogger
+from checkers.logging_utils import GameLogger
 import numpy as np
 
 class GameHandler:

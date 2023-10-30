@@ -7,10 +7,15 @@ from checkers.logic.bb_utils import bb_to_np_compact
 from tqdm import tqdm
 import os
 import matplotlib.pyplot as plot
-from checkers.logging import GameLogger
+from checkers.logging_utils import GameLogger
 from checkers.AI.MetricsModel import MetricsModel
 from checkers.AI.BoardModel import BoardModel
 from time import sleep
+import logging
+
+from checkers.logging_utils import setup_logging
+from keras.callbacks import CSVLogger
+
 
 def revert_and_transform(arg):
     board = arg[0]
@@ -26,7 +31,6 @@ def make_initial_q_value(args: Namespace):
     metrics_path = os.path.join(args.c_model_folder, "metrics",  "metrics_model.ckpt")
     status = metrics_model.load_weights(metrics_path)
     status.expect_partial()
-
     
     start_board = MoverBoard(args.c_data_folder)
     boards_list, turns_list, metrics, winning = start_board.generate_games(1000)
@@ -50,8 +54,11 @@ def make_initial_q_value(args: Namespace):
     cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=board_path,
                                                  save_weights_only=True,
                                                  verbose=1)
+    
+    log_path = os.path.join(args.c_model_folder, "board", "tf_log.csv")
+    csv_logger = CSVLogger(log_path, append=False, separator=';')
 
-    board_model.fit(board_data, probabilistic, epochs=32, batch_size=64, sample_weight=confidence, verbose=2, callbacks= [cp_callback])
+    board_model.fit(board_data, probabilistic, epochs=32, batch_size=64, sample_weight=confidence, verbose=2, callbacks= [cp_callback, csv_logger])
     
 
 
@@ -63,8 +70,8 @@ def reinforce_board_model(args: Namespace):
     status = board_model.load_weights(model_path)
     status.expect_partial()
     board_model.compile(optimizer='nadam', loss='mean_squared_error')
-    n_gens = 500
-    n_games_per_gen = 200
+    n_gens = 2
+    n_games_per_gen = 2
 
     start_board = MoverBoard(args.c_data_folder)
     boards_list, turns_list, __, _ = start_board.generate_games(10000)
@@ -74,6 +81,8 @@ def reinforce_board_model(args: Namespace):
     discount_factor = 0.95
 
     save_folder = os.path.join(args.c_model_folder, "reinforced")
+    setup_logging(save_folder)
+
     if os.path.exists(save_folder) == False:
         os.mkdir(save_folder)
     board_path = os.path.join(args.c_model_folder, "reinforced", "board_model.ckpt")
@@ -81,10 +90,15 @@ def reinforce_board_model(args: Namespace):
                                                  save_weights_only=True,
                                                  verbose=1)
 
+    log_path = os.path.join(args.c_model_folder, "reinforced", "tf_log.csv")
+    if os.path.exists(log_path):
+        os.remove(log_path)
+    csv_logger = CSVLogger(log_path, append=True, separator=';')
+
     for g in range(0, n_gens):
         reinforce_data = np.zeros((1, 32))
         reinforce_labels = np.zeros(1)
-        print("reinforcing generation: ", g)
+        logging.info(f"reinforcing generation: {g}")
         for game in range(0, n_games_per_gen):
             starting_pos = np.random.randint(0, len(boards_list))
             cur_board = MoverBoard(board=boards_list[starting_pos])
@@ -97,7 +111,7 @@ def reinforce_board_model(args: Namespace):
             n_b_wins = 0
             n_draws = 0
             if game%20==0:
-                print(">>>game number ", game)
+                logging.info(f">>>game number {game}")
             while True:
                 boards = cur_board.generate_next()
                 board_data = list(map(revert_and_transform, zip(boards, [cur_player for b in boards])))
@@ -141,12 +155,12 @@ def reinforce_board_model(args: Namespace):
                     reinforce_labels =np.vstack((reinforce_labels, temp_reinforce_labels))
                     break
         
-        board_model.fit(reinforce_data[1:], reinforce_labels[1:], epochs=16, batch_size=64, verbose=1, callbacks= [cp_callback])
+        board_model.fit(reinforce_data[1:], reinforce_labels[1:], epochs=16, batch_size=64, verbose=1, callbacks= [cp_callback, csv_logger])
         winrate = int((n_w_wins+n_draws)/(n_w_wins+n_draws+n_b_wins)*100)
         winrates.append(winrate)
     
-    generations = range(0, 500)
-    print("Final win/draw rate : " + str(winrates[499])+"%" )
+    generations = np.linspace(0, len(winrates), len(winrates))
+    logging.info(f"Final win/draw rate : {winrates[-1]}%" )
     plot.plot(generations,winrates)
     plot.show()
 

@@ -6,7 +6,7 @@ from checkers.CheckersConstants import CheckersConstants as ccs
 from tqdm import tqdm
 import os
 import matplotlib.pyplot as plot
-from checkers.logging import GameLogger
+from checkers.logging_utils import GameLogger
 from checkers.AI.MetricsModel import MetricsModel
 
 def make_metrics_model(args: Namespace) -> None:

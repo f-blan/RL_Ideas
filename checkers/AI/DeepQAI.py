@@ -14,7 +14,7 @@ class DeepQAI(CheckersAI):
         super().__init__(color)
 
         self.model = BoardModel()
-        metrics_path = os.path.join(model_folder, "board",  "board_model.ckpt")
+        metrics_path = os.path.join(model_folder, "reinforced",  "board_model.ckpt")
         status = self.model.load_weights(metrics_path)
         status.expect_partial()
     
