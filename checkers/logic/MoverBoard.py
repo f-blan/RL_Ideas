@@ -114,7 +114,7 @@ class MoverBoard(CheckersBoard):
 
         return ret
 
-    def generate_games(self, nmbr_generated_game: int) -> Tuple[list[CheckersBoard], list[int], np.ndarray, np.ndarray]:
+    def generate_games(self, nmbr_generated_game: int, canon: bool = True) -> Tuple[list[CheckersBoard], list[int], np.ndarray, np.ndarray]:
         boards_list = self.generate_next()
         turns_list = [ccs.WHITE_TURN for b in boards_list]
         branching_position = 0
@@ -143,7 +143,7 @@ class MoverBoard(CheckersBoard):
 
         print("processing games")
         for board, turn in tqdm(zip(boards_list[:nmbr_generated_game], turns_list[:nmbr_generated_game])):
-            canon_b = MoverBoard(board = board).get_canonical_perspective(turn)
+            canon_b = MoverBoard(board = board).get_canonical_perspective(turn) if canon else MoverBoard(board=board)
             temp = canon_b.get_metrics()
 
             metrics = np.vstack((metrics, temp[1:]))

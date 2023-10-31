@@ -10,7 +10,7 @@ from checkers.logic.MoverBoard import MoverBoard
 from checkers.CheckersConstants import CheckersConstants as ccs
 
 
-def setup_logging(output_folder, console="info",
+def setup_logging(output_folder, console="debug",
                   info_filename="info.log", debug_filename="debug.log"):
     """Set up logging files and console output.
     Creates one file for INFO logs and one for DEBUG logs.
@@ -60,8 +60,6 @@ def setup_logging(output_folder, console="info",
         logger.info("\n" + "".join(traceback.format_exception(type, value, tb)))
     sys.excepthook = exception_handler
 
-    logger = logging.getLogger('my-logger')
-    logger.propagate = False
 
 class GameLogger():
     def __init__(self, log_root: str, folder_name: str, game_name: str = None):

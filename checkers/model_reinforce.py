@@ -24,6 +24,9 @@ def revert_and_transform(arg):
     np_mat = bb_to_np_compact(canon_b.W, canon_b.B, canon_b.K)
     return np_mat.flatten()
 
+def transform_to_np(b):
+    return bb_to_np_compact(b.W, b.B, b.K).flatten()
+
 def make_initial_q_value(args: Namespace):
     board_model = BoardModel()
 
@@ -33,9 +36,11 @@ def make_initial_q_value(args: Namespace):
     status.expect_partial()
     
     start_board = MoverBoard(args.c_data_folder)
-    boards_list, turns_list, metrics, winning = start_board.generate_games(1000)
+    boards_list, turns_list, metrics, winning = start_board.generate_games(10000, False)
     
-    board_data = list(map(revert_and_transform, zip(boards_list, turns_list)))
+    #board_data = list(map(revert_and_transform, zip(boards_list, turns_list)))
+    board_data = list(map(transform_to_np, boards_list))
+    
     board_data = np.array(board_data)
 
     probabilistic = metrics_model.predict_on_batch(metrics)
@@ -57,8 +62,13 @@ def make_initial_q_value(args: Namespace):
     
     log_path = os.path.join(args.c_model_folder, "board", "tf_log.csv")
     csv_logger = CSVLogger(log_path, append=False, separator=';')
+    setup_logging(os.path.join(args.c_model_folder, "board"))
 
-    board_model.fit(board_data, probabilistic, epochs=32, batch_size=64, sample_weight=confidence, verbose=2, callbacks= [cp_callback, csv_logger])
+    logging.info(f"initializing q value to {board_folder}")
+    board_model.fit(board_data, probabilistic, epochs=32, batch_size=64, sample_weight=confidence, verbose=1, callbacks= [cp_callback, csv_logger])
+    bb = MoverBoard()
+    eval = board_model.predict_on_batch(board_data[:3])
+    logging.info(f"starting position has evaluation {eval}")
     
 
 
@@ -70,8 +80,12 @@ def reinforce_board_model(args: Namespace):
     status = board_model.load_weights(model_path)
     status.expect_partial()
     board_model.compile(optimizer='nadam', loss='mean_squared_error')
-    n_gens = 2
-    n_games_per_gen = 2
+    n_gens = 20
+    n_games_per_gen = 200
+
+    base_board = [0]*32
+    base_board = [base_board]
+    base_board = np.array(base_board)
 
     start_board = MoverBoard(args.c_data_folder)
     boards_list, turns_list, __, _ = start_board.generate_games(10000)
@@ -98,7 +112,10 @@ def reinforce_board_model(args: Namespace):
     for g in range(0, n_gens):
         reinforce_data = np.zeros((1, 32))
         reinforce_labels = np.zeros(1)
-        logging.info(f"reinforcing generation: {g}")
+        n_w_wins = 0
+        n_b_wins = 0
+        n_draws = 0
+        logging.info(f">>reinforcing generation: {g}")
         for game in range(0, n_games_per_gen):
             starting_pos = np.random.randint(0, len(boards_list))
             cur_board = MoverBoard(board=boards_list[starting_pos])
@@ -107,24 +124,25 @@ def reinforce_board_model(args: Namespace):
             turn_n = 0
 
             temp_reinforce_data = []
-            n_w_wins = 0
-            n_b_wins = 0
-            n_draws = 0
+            temp_reinforce_labels = []
+
             if game%20==0:
-                logging.info(f">>>game number {game}")
+                logging.info(f">>>>>game number {game}")
             while True:
                 boards = cur_board.generate_next()
-                board_data = list(map(revert_and_transform, zip(boards, [cur_player for b in boards])))
+                board_data = list(map(transform_to_np, boards))
                 board_data = np.array(board_data)
 
-                if len(boards)>0:                
+                if len(boards)>0:
                     scores = board_model.predict_on_batch(board_data)
-                    choice = np.argmax(scores) if cur_player == ccs.WHITE_TURN else np.argmin(scores)
+                    choice = np.argmax(scores)
 
                     cur_board = MoverBoard(board=boards[choice])
                     cur_board.reverse()
 
                     temp_reinforce_data.append(board_data[choice])
+                    temp_reinforce_labels.append(-1 if cur_player == ccs.BLACK_TURN else 1)
+
                     cur_player = ccs.WHITE_TURN if cur_player == ccs.BLACK_TURN else ccs.BLACK_TURN
                     turn_n +=1
 
@@ -132,32 +150,33 @@ def reinforce_board_model(args: Namespace):
                     if len(temp_reinforce_data) == 0:
                         break
                     canon_b = MoverBoard(board=cur_board.get_canonical_perspective(cur_player))
-                    reward = -5
-                    opt_pred = -1
-                    if canon_b.W > 0 and canon_b.B == 0:
-                        reward = 10
-                        opt_pred = 1
-                        n_w_wins+=1
-                    elif canon_b.W == 0 and canon_b.B > 0:
-                        reward = -10
-                        opt_pred = -1
+                    reward = 1
+                    temp_reinforce_labels = np.transpose(np.array([temp_reinforce_labels]))
+
+                    if canon_b.W.bit_count() < canon_b.B.bit_count():
+                        temp_reinforce_labels = -temp_reinforce_labels
+                    
+                    if canon_b.W >0 and canon_b.B ==0:
+                        n_w_wins += 1
+                    elif canon_b.W == 0 and canon_b.B >0:
                         n_b_wins +=1
                     else:
-                        reward = -3
-                        opt_pred = 0
-                        n_draws+=1
-                    
+                        n_draws +=1
+
                     temp_reinforce_data = np.array(temp_reinforce_data)
                     old_prediction = board_model.predict_on_batch(temp_reinforce_data)
-                    optimal_futur_value = opt_pred*np.ones(old_prediction.shape)
-                    temp_reinforce_labels = old_prediction + learning_rate * (reward + discount_factor * optimal_futur_value - old_prediction )
+                    optimal_futur_value = temp_reinforce_labels
+                    temp_reinforce_labels = old_prediction + learning_rate * (reward*optimal_futur_value + discount_factor * optimal_futur_value - old_prediction )
                     reinforce_data=np.vstack((reinforce_data, temp_reinforce_data))
                     reinforce_labels =np.vstack((reinforce_labels, temp_reinforce_labels))
                     break
         
+        logging.info(f"games created, performing fitting. Game stats: ({n_w_wins, n_b_wins, n_draws}). Data shape: ({reinforce_data.shape})")
         board_model.fit(reinforce_data[1:], reinforce_labels[1:], epochs=16, batch_size=64, verbose=1, callbacks= [cp_callback, csv_logger])
         winrate = int((n_w_wins+n_draws)/(n_w_wins+n_draws+n_b_wins)*100)
         winrates.append(winrate)
+        eval = board_model.predict_on_batch(base_board)
+        logging.info(f">>model refitted, base board has eval {eval}")
     
     generations = np.linspace(0, len(winrates), len(winrates))
     logging.info(f"Final win/draw rate : {winrates[-1]}%" )

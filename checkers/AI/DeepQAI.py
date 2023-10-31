@@ -18,13 +18,12 @@ class DeepQAI(CheckersAI):
         status = self.model.load_weights(metrics_path)
         status.expect_partial()
     
-    def _revert_and_transform(self, board: MoverBoard) -> np.ndarray:
-        canon_b = MoverBoard(board = board).get_canonical_perspective(self.color)
-        return bb_to_np_compact(canon_b.W, canon_b.B, canon_b.K).flatten()
+    def _transform(self, b: MoverBoard) -> np.ndarray:
+        return bb_to_np_compact(b.W, b.B, b.K).flatten()
 
     def get_next_state(self) -> MoverBoard:
         boards = self.board.generate_next()
-        boards_np = list(map(self._revert_and_transform, boards))
+        boards_np = list(map(self._transform, boards))
         boards_np = np.array(boards_np)
 
         preds = self.model.predict_on_batch(boards_np)
@@ -34,6 +33,6 @@ class DeepQAI(CheckersAI):
         return MoverBoard(board=boards[move_i])
 
     def evaluate_state(self) -> float:
-        board_np = np.array([self._revert_and_transform(self.board)])
+        board_np = np.array([self._transform(self.board)])
         pred = self.model.predict_on_batch(board_np)
         return pred[0]
