@@ -12,7 +12,7 @@ def parse_main_arguments(args_list: List[str]) -> Namespace:
     parser.add_argument("--log_folder", default=os.path.join(".", "logs"))
 
     #checkers arguments
-    parser.add_argument("--c_mode", choices=["bb_generate", "game_run", "metrics_train", "q_init", "reinforce_model"], default="game_run", help="checkers: select which task to run with")
+    parser.add_argument("--c_mode", choices=["bb_generate", "game_run", "metrics_train", "q_init", "reinforce_model", "test_reinforce"], default="game_run", help="checkers: select which task to run with")
     parser.add_argument("--c_data_folder", default=os.path.join(".", "checkers", "data"), help="checkers: folder where pre-computed data is stored")
     parser.add_argument("--c_GUI_type", choices=["terminal", "simple"], default="simple", help="choose the GUI to use when running a game")
     parser.add_argument("--c_GUI_engine", action= "store_true")

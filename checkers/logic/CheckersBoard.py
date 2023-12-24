@@ -36,6 +36,12 @@ class CheckersBoard:
     def is_game_over(self) -> bool:
         return self.B == 0 or self.W == 0
 
+    def get_winner(self) -> int:
+        if self.is_game_over() == False:
+            return ccs.DRAW_GAME
+        else:
+            return ccs.WHITE_TURN if self.W > 0 else ccs.BLACK_TURN
+
     def get_metrics(self)-> np.ndarray:
 
         capped, potential, men, kings, mid, capturables, won = self.bb_m.bb_scores(self.W, self.B, self.K)

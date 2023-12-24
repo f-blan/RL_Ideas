@@ -4,6 +4,7 @@ from argparse import Namespace
 from checkers.GameHandler import GameHandler
 from checkers.metrics_train import make_metrics_model
 from checkers.model_reinforce import make_initial_q_value, reinforce_board_model
+from checkers.model_test import test_reinforce
 
 class CheckersRunner:
     def run(self, args: Namespace) -> None:
@@ -18,6 +19,8 @@ class CheckersRunner:
                 self._init_q_value(args)
             case "reinforce_model":
                 self._reinforce_model(args)
+            case "test_reinforce":
+                self._test_reinforce(args)
 
     def _bb_generate(self, args: Namespace) -> None:
         generate_bbs(args.c_data_folder)
@@ -33,3 +36,6 @@ class CheckersRunner:
     
     def _reinforce_model(self, args: Namespace) -> None:
         reinforce_board_model(args)
+    
+    def _test_reinforce(self, args: Namespace) -> None:
+        test_reinforce(args)

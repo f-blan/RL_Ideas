@@ -24,7 +24,8 @@ class MoverBoard(CheckersBoard):
 
     def can_move(self) -> bool:
         return self.bb_m.get_n_moves_possible(self.W, self.B, self.K, ccs.WHITE_TURN) > 0
-    
+
+
     def reverse(self) -> None:
         tmp = self.W
         

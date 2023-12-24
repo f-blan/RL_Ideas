@@ -10,13 +10,16 @@ import numpy as np
 from checkers.CheckersConstants import CheckersConstants as ccs
 
 class DeepQAI(CheckersAI):
-    def __init__(self, color: int, model_folder: str):
+    def __init__(self, color: int, model_folder: str = "", model: BoardModel = None):
         super().__init__(color)
 
-        self.model = BoardModel()
-        metrics_path = os.path.join(model_folder, "reinforced",  "board_model.ckpt")
-        status = self.model.load_weights(metrics_path)
-        status.expect_partial()
+        if model is None:
+            self.model = BoardModel()
+            metrics_path = os.path.join(model_folder, "reinforced",  "board_model.ckpt")
+            status = self.model.load_weights(metrics_path)
+            status.expect_partial()
+        else:
+            self.model = model
     
     def _transform(self, b: MoverBoard) -> np.ndarray:
         return bb_to_np_compact(b.W, b.B, b.K).flatten()
